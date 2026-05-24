@@ -31,6 +31,7 @@ export function isPixabayCatPhoto(tags, pixabayType = "photo") {
   if (pixabayType !== "photo") return false;
 
   const t = (tags ?? "").toLowerCase().replace(/,/g, " ");
+  if (!t.includes("cat")) return false;
 
   if (
     /\b(cartoon|comic|anime|manga|illustration|vector|clipart|drawing|sketch|painted|painting|artwork|graphic|silhouette|sticker|emoji|logo|icon|animated|animation|3d render|3d art|render|figurine|statue|sculpture|mural|poster|wallpaper|background|texture|mascot|character|digital art|line art|ink drawing|coloring book|clip art|rendering|cgi|cartoon cat|cartoon character|figure)\b/.test(
@@ -49,14 +50,6 @@ export function isPixabayCatPhoto(tags, pixabayType = "photo") {
   }
 
   if (/\b(met\b|nypl|perronneau|portrait holding|holding a tray)\b/.test(t)) {
-    return false;
-  }
-
-  if (
-    !/\b(cat|cats|kitten|kittens|feline|kitty|tabby|tomcat|domestic cat)\b/.test(
-      t,
-    )
-  ) {
     return false;
   }
 
@@ -87,7 +80,10 @@ const PUREBRED_TAG_HINTS = [
   "american shorthair",
 ];
 
-/** Pixabay tags must mention the breed (or pattern for domestic types). */
+/**
+ * @deprecated Prefer tagsMatchPixabayCatQuery — breed is locked to searchQuery, not tag inference.
+ * Pixabay tags must mention the breed (or pattern for domestic types).
+ */
 export function tagsMatchCatBreed(tags, breedName, slug) {
   const tagStr = (tags ?? "").toLowerCase().replace(/,/g, " ");
   const hasCat =
@@ -161,37 +157,107 @@ export function tagsMatchCatBreed(tags, breedName, slug) {
   return words.every((w) => tagStr.includes(w));
 }
 
-export function buildCatPixabayQueries(breed) {
-  const overrides = PIXABAY_QUERY_OVERRIDES[breed.slug];
-  if (overrides) return overrides;
+/** Home/candid scenes — bias away from studio stock photos (priority set). */
+const CANDID_CAT_SCENES = [
+  "home",
+  "couch",
+  "window sunlight",
+  "messy room",
+  "hiding under table",
+];
 
+const GENERIC_CANDID_CAT_QUERIES = [
+  "cat window sunlight",
+  "cat hiding under table",
+  "house cat candid",
+  "pet cat messy room",
+];
+
+function buildCandidQueriesForBreed(breedName) {
+  const base = breedName.replace(/\s*\([^)]*\)/g, "").trim();
+  return CANDID_CAT_SCENES.map((scene) => `${base} cat ${scene}`);
+}
+
+export function buildCatPixabayQueries(breed) {
   const base = breed.name.replace(/\s*\([^)]*\)/g, "").trim();
-  const queries = [`${base} cat`, `${base} kitten`];
-  for (const q of breed.extraQueries ?? []) {
-    queries.push(q);
+  const candid = buildCandidQueriesForBreed(base);
+  const core = [`${base} cat`, `${base} kitten`];
+  const extra = breed.extraQueries ?? [];
+  const overrides = PIXABAY_QUERY_OVERRIDES[breed.slug];
+
+  const generic =
+    breed.group === "domestic" ? GENERIC_CANDID_CAT_QUERIES : [];
+
+  if (overrides) {
+    return [...new Set([...candid, ...extra, ...generic, ...overrides])].slice(
+      0,
+      10,
+    );
   }
-  return [...new Set(queries)].slice(0, 6);
+
+  return [...new Set([...candid, ...extra, ...generic, ...core])].slice(0, 10);
 }
 
 const PIXABAY_QUERY_OVERRIDES = {
   torbie: [
+    "torbie cat home",
+    "torbie cat couch",
     "torbie cat",
     "tortoiseshell tabby cat",
     "tortie tabby cat",
     "patched tabby cat",
   ],
   "american-shorthair": [
+    "american shorthair cat home",
+    "american shorthair cat couch",
     "american shorthair cat",
     "american shorthair kitten",
-    "american cat shorthair breed",
   ],
-  tuxedo: ["tuxedo cat", "black white tuxedo cat"],
-  "tabby-mix": ["tabby cat", "mackerel tabby cat", "brown tabby cat"],
-  "domestic-shorthair": ["domestic shorthair cat", "house cat tabby", "tabby house cat"],
-  "domestic-longhair": ["longhair cat fluffy", "domestic longhair cat"],
-  sphynx: ["sphynx cat hairless", "sphynx kitten", "hairless cat sphynx"],
-  "devon-rex": ["devon rex cat", "devon rex kitten"],
-  "exotic-shorthair": ["exotic shorthair cat", "exotic shorthair kitten"],
+  tuxedo: [
+    "tuxedo cat home",
+    "tuxedo cat couch",
+    "tuxedo cat",
+    "black white tuxedo cat",
+  ],
+  "tabby-mix": [
+    "tabby cat home",
+    "tabby cat couch",
+    "tabby cat",
+    "mackerel tabby cat",
+    "brown tabby cat",
+  ],
+  "domestic-shorthair": [
+    "domestic shorthair cat home",
+    "domestic shorthair cat couch",
+    "domestic shorthair cat",
+    "house cat tabby",
+    "tabby house cat",
+  ],
+  "domestic-longhair": [
+    "domestic longhair cat home",
+    "longhair cat couch",
+    "longhair cat fluffy",
+    "domestic longhair cat",
+  ],
+  sphynx: [
+    "sphynx cat home",
+    "sphynx cat couch",
+    "sphynx cat hairless",
+    "sphynx kitten",
+    "hairless cat sphynx",
+  ],
+  "devon-rex": [
+    "devon rex cat home",
+    "devon rex cat couch",
+    "devon rex cat",
+    "devon rex kitten",
+  ],
+  "exotic-shorthair": [
+    "exotic shorthair cat home",
+    "exotic shorthair cat couch",
+    "exotic shorthair cat",
+    "exotic shorthair kitten",
+  ],
 };
 
 /** Top 20 cat breeds for pets (by weight) with extra Wikimedia search terms. */
@@ -201,8 +267,6 @@ export const TOP_CAT_BREEDS_FOR_PHOTOS = [
     name: "Domestic Shorthair",
     group: "domestic",
     extraQueries: [
-      "house cat candid",
-      "domestic cat home pet",
       "rescue cat smartphone",
       "tabby house cat backyard",
     ],
@@ -211,39 +275,31 @@ export const TOP_CAT_BREEDS_FOR_PHOTOS = [
     slug: "domestic-longhair",
     name: "Domestic Longhair",
     group: "domestic",
-    extraQueries: [
-      "long haired house cat",
-      "fluffy domestic cat home",
-      "rescue longhair cat",
-    ],
+    extraQueries: ["rescue longhair cat", "fluffy cat window sunlight"],
   },
   {
     slug: "domestic-medium-hair",
     name: "Domestic Medium Hair",
     group: "domestic",
-    extraQueries: ["medium hair domestic cat", "house cat medium coat"],
+    extraQueries: ["medium hair cat home", "house cat medium coat"],
   },
   {
     slug: "tabby-mix",
     name: "Tabby Mix",
     group: "domestic",
-    extraQueries: [
-      "tabby cat candid",
-      "mackerel tabby cat home",
-      "brown tabby cat pet",
-    ],
+    extraQueries: ["mackerel tabby cat home", "brown tabby cat couch"],
   },
   {
     slug: "tuxedo",
     name: "Tuxedo (Domestic)",
     group: "domestic",
-    extraQueries: ["tuxedo cat black white pet", "black and white house cat"],
+    extraQueries: ["black and white house cat", "tuxedo cat window sunlight"],
   },
   {
     slug: "calico",
     name: "Calico (Domestic)",
     group: "domestic",
-    extraQueries: ["calico cat home pet", "calico house cat candid"],
+    extraQueries: ["calico cat couch", "calico house cat window"],
   },
   {
     slug: "torbie",
@@ -261,25 +317,25 @@ export const TOP_CAT_BREEDS_FOR_PHOTOS = [
     slug: "siamese",
     name: "Siamese",
     group: "oriental",
-    extraQueries: ["siamese cat home pet", "siamese kitten candid"],
+    extraQueries: ["siamese cat couch", "siamese cat messy room"],
   },
   {
     slug: "maine-coon",
     name: "Maine Coon",
     group: "natural",
-    extraQueries: ["maine coon cat home", "maine coon pet candid"],
+    extraQueries: ["maine coon cat home", "maine coon cat couch"],
   },
   {
     slug: "ragdoll",
     name: "Ragdoll",
     group: "semi_longhair",
-    extraQueries: ["ragdoll cat home pet", "ragdoll kitten candid"],
+    extraQueries: ["ragdoll cat couch", "ragdoll cat home"],
   },
   {
     slug: "persian",
     name: "Persian",
     group: "longhair",
-    extraQueries: ["persian cat home pet", "persian kitten candid"],
+    extraQueries: ["persian cat messy room", "persian cat couch"],
   },
   {
     slug: "bengal",

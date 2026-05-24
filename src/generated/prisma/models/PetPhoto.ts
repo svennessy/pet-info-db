@@ -44,6 +44,7 @@ export type PetPhotoMinAggregateOutputType = {
   imagePath: string | null
   sortOrder: number | null
   stanfordInstanceKey: string | null
+  createdAt: Date | null
 }
 
 export type PetPhotoMaxAggregateOutputType = {
@@ -52,6 +53,7 @@ export type PetPhotoMaxAggregateOutputType = {
   imagePath: string | null
   sortOrder: number | null
   stanfordInstanceKey: string | null
+  createdAt: Date | null
 }
 
 export type PetPhotoCountAggregateOutputType = {
@@ -60,6 +62,7 @@ export type PetPhotoCountAggregateOutputType = {
   imagePath: number
   sortOrder: number
   stanfordInstanceKey: number
+  createdAt: number
   _all: number
 }
 
@@ -82,6 +85,7 @@ export type PetPhotoMinAggregateInputType = {
   imagePath?: true
   sortOrder?: true
   stanfordInstanceKey?: true
+  createdAt?: true
 }
 
 export type PetPhotoMaxAggregateInputType = {
@@ -90,6 +94,7 @@ export type PetPhotoMaxAggregateInputType = {
   imagePath?: true
   sortOrder?: true
   stanfordInstanceKey?: true
+  createdAt?: true
 }
 
 export type PetPhotoCountAggregateInputType = {
@@ -98,6 +103,7 @@ export type PetPhotoCountAggregateInputType = {
   imagePath?: true
   sortOrder?: true
   stanfordInstanceKey?: true
+  createdAt?: true
   _all?: true
 }
 
@@ -193,6 +199,7 @@ export type PetPhotoGroupByOutputType = {
   imagePath: string
   sortOrder: number
   stanfordInstanceKey: string
+  createdAt: Date
   _count: PetPhotoCountAggregateOutputType | null
   _avg: PetPhotoAvgAggregateOutputType | null
   _sum: PetPhotoSumAggregateOutputType | null
@@ -224,6 +231,7 @@ export type PetPhotoWhereInput = {
   imagePath?: Prisma.StringFilter<"PetPhoto"> | string
   sortOrder?: Prisma.IntFilter<"PetPhoto"> | number
   stanfordInstanceKey?: Prisma.StringFilter<"PetPhoto"> | string
+  createdAt?: Prisma.DateTimeFilter<"PetPhoto"> | Date | string
   pet?: Prisma.XOR<Prisma.PetScalarRelationFilter, Prisma.PetWhereInput>
 }
 
@@ -233,6 +241,7 @@ export type PetPhotoOrderByWithRelationInput = {
   imagePath?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   stanfordInstanceKey?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
   pet?: Prisma.PetOrderByWithRelationInput
 }
 
@@ -246,6 +255,7 @@ export type PetPhotoWhereUniqueInput = Prisma.AtLeast<{
   imagePath?: Prisma.StringFilter<"PetPhoto"> | string
   sortOrder?: Prisma.IntFilter<"PetPhoto"> | number
   stanfordInstanceKey?: Prisma.StringFilter<"PetPhoto"> | string
+  createdAt?: Prisma.DateTimeFilter<"PetPhoto"> | Date | string
   pet?: Prisma.XOR<Prisma.PetScalarRelationFilter, Prisma.PetWhereInput>
 }, "id" | "petId_imagePath">
 
@@ -255,6 +265,7 @@ export type PetPhotoOrderByWithAggregationInput = {
   imagePath?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   stanfordInstanceKey?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
   _count?: Prisma.PetPhotoCountOrderByAggregateInput
   _avg?: Prisma.PetPhotoAvgOrderByAggregateInput
   _max?: Prisma.PetPhotoMaxOrderByAggregateInput
@@ -271,12 +282,14 @@ export type PetPhotoScalarWhereWithAggregatesInput = {
   imagePath?: Prisma.StringWithAggregatesFilter<"PetPhoto"> | string
   sortOrder?: Prisma.IntWithAggregatesFilter<"PetPhoto"> | number
   stanfordInstanceKey?: Prisma.StringWithAggregatesFilter<"PetPhoto"> | string
+  createdAt?: Prisma.DateTimeWithAggregatesFilter<"PetPhoto"> | Date | string
 }
 
 export type PetPhotoCreateInput = {
   imagePath: string
   sortOrder: number
   stanfordInstanceKey: string
+  createdAt?: Date | string
   pet: Prisma.PetCreateNestedOneWithoutPhotosInput
 }
 
@@ -286,12 +299,14 @@ export type PetPhotoUncheckedCreateInput = {
   imagePath: string
   sortOrder: number
   stanfordInstanceKey: string
+  createdAt?: Date | string
 }
 
 export type PetPhotoUpdateInput = {
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   stanfordInstanceKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   pet?: Prisma.PetUpdateOneRequiredWithoutPhotosNestedInput
 }
 
@@ -301,6 +316,7 @@ export type PetPhotoUncheckedUpdateInput = {
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   stanfordInstanceKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PetPhotoCreateManyInput = {
@@ -309,12 +325,14 @@ export type PetPhotoCreateManyInput = {
   imagePath: string
   sortOrder: number
   stanfordInstanceKey: string
+  createdAt?: Date | string
 }
 
 export type PetPhotoUpdateManyMutationInput = {
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   stanfordInstanceKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PetPhotoUncheckedUpdateManyInput = {
@@ -323,6 +341,7 @@ export type PetPhotoUncheckedUpdateManyInput = {
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   stanfordInstanceKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PetPhotoListRelationFilter = {
@@ -346,6 +365,7 @@ export type PetPhotoCountOrderByAggregateInput = {
   imagePath?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   stanfordInstanceKey?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type PetPhotoAvgOrderByAggregateInput = {
@@ -360,6 +380,7 @@ export type PetPhotoMaxOrderByAggregateInput = {
   imagePath?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   stanfordInstanceKey?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type PetPhotoMinOrderByAggregateInput = {
@@ -368,6 +389,7 @@ export type PetPhotoMinOrderByAggregateInput = {
   imagePath?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   stanfordInstanceKey?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type PetPhotoSumOrderByAggregateInput = {
@@ -422,6 +444,7 @@ export type PetPhotoCreateWithoutPetInput = {
   imagePath: string
   sortOrder: number
   stanfordInstanceKey: string
+  createdAt?: Date | string
 }
 
 export type PetPhotoUncheckedCreateWithoutPetInput = {
@@ -429,6 +452,7 @@ export type PetPhotoUncheckedCreateWithoutPetInput = {
   imagePath: string
   sortOrder: number
   stanfordInstanceKey: string
+  createdAt?: Date | string
 }
 
 export type PetPhotoCreateOrConnectWithoutPetInput = {
@@ -466,6 +490,7 @@ export type PetPhotoScalarWhereInput = {
   imagePath?: Prisma.StringFilter<"PetPhoto"> | string
   sortOrder?: Prisma.IntFilter<"PetPhoto"> | number
   stanfordInstanceKey?: Prisma.StringFilter<"PetPhoto"> | string
+  createdAt?: Prisma.DateTimeFilter<"PetPhoto"> | Date | string
 }
 
 export type PetPhotoCreateManyPetInput = {
@@ -473,12 +498,14 @@ export type PetPhotoCreateManyPetInput = {
   imagePath: string
   sortOrder: number
   stanfordInstanceKey: string
+  createdAt?: Date | string
 }
 
 export type PetPhotoUpdateWithoutPetInput = {
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   stanfordInstanceKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PetPhotoUncheckedUpdateWithoutPetInput = {
@@ -486,6 +513,7 @@ export type PetPhotoUncheckedUpdateWithoutPetInput = {
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   stanfordInstanceKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PetPhotoUncheckedUpdateManyWithoutPetInput = {
@@ -493,6 +521,7 @@ export type PetPhotoUncheckedUpdateManyWithoutPetInput = {
   imagePath?: Prisma.StringFieldUpdateOperationsInput | string
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   stanfordInstanceKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -503,6 +532,7 @@ export type PetPhotoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   imagePath?: boolean
   sortOrder?: boolean
   stanfordInstanceKey?: boolean
+  createdAt?: boolean
   pet?: boolean | Prisma.PetDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["petPhoto"]>
 
@@ -512,6 +542,7 @@ export type PetPhotoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   imagePath?: boolean
   sortOrder?: boolean
   stanfordInstanceKey?: boolean
+  createdAt?: boolean
   pet?: boolean | Prisma.PetDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["petPhoto"]>
 
@@ -521,6 +552,7 @@ export type PetPhotoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   imagePath?: boolean
   sortOrder?: boolean
   stanfordInstanceKey?: boolean
+  createdAt?: boolean
   pet?: boolean | Prisma.PetDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["petPhoto"]>
 
@@ -530,9 +562,10 @@ export type PetPhotoSelectScalar = {
   imagePath?: boolean
   sortOrder?: boolean
   stanfordInstanceKey?: boolean
+  createdAt?: boolean
 }
 
-export type PetPhotoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "petId" | "imagePath" | "sortOrder" | "stanfordInstanceKey", ExtArgs["result"]["petPhoto"]>
+export type PetPhotoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "petId" | "imagePath" | "sortOrder" | "stanfordInstanceKey" | "createdAt", ExtArgs["result"]["petPhoto"]>
 export type PetPhotoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   pet?: boolean | Prisma.PetDefaultArgs<ExtArgs>
 }
@@ -554,6 +587,7 @@ export type $PetPhotoPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     imagePath: string
     sortOrder: number
     stanfordInstanceKey: string
+    createdAt: Date
   }, ExtArgs["result"]["petPhoto"]>
   composites: {}
 }
@@ -983,6 +1017,7 @@ export interface PetPhotoFieldRefs {
   readonly imagePath: Prisma.FieldRef<"PetPhoto", 'String'>
   readonly sortOrder: Prisma.FieldRef<"PetPhoto", 'Int'>
   readonly stanfordInstanceKey: Prisma.FieldRef<"PetPhoto", 'String'>
+  readonly createdAt: Prisma.FieldRef<"PetPhoto", 'DateTime'>
 }
     
 

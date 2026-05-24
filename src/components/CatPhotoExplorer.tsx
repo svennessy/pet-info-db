@@ -214,8 +214,9 @@ export function CatPhotoExplorer() {
       {stats && stats.catsWithPhotos === 0 && !loading && (
         <p className="hint hint-info">
           Add <code className="mono">PIXABAY_KEY</code> to <code className="mono">.env</code>
-          , then run <code className="mono">npm run setup:candid-cats -- --fresh</code> and{" "}
-          <code className="mono">npm run db:seed:cat-photos</code>.
+          Run <code className="mono">npm run dataset:cat:fetch</code>, then{" "}
+          <code className="mono">npm run dataset:cat:process</code> and{" "}
+          <code className="mono">npm run dataset:cat:seed</code>.
         </p>
       )}
 

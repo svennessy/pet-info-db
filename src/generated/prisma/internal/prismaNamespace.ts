@@ -913,7 +913,8 @@ export const PetScalarFieldEnum = {
   dogBreedSlug: 'dogBreedSlug',
   catBreedSlug: 'catBreedSlug',
   otherKind: 'otherKind',
-  ownerId: 'ownerId'
+  ownerId: 'ownerId',
+  createdAt: 'createdAt'
 } as const
 
 export type PetScalarFieldEnum = (typeof PetScalarFieldEnum)[keyof typeof PetScalarFieldEnum]
@@ -935,7 +936,8 @@ export const PetPhotoScalarFieldEnum = {
   petId: 'petId',
   imagePath: 'imagePath',
   sortOrder: 'sortOrder',
-  stanfordInstanceKey: 'stanfordInstanceKey'
+  stanfordInstanceKey: 'stanfordInstanceKey',
+  createdAt: 'createdAt'
 } as const
 
 export type PetPhotoScalarFieldEnum = (typeof PetPhotoScalarFieldEnum)[keyof typeof PetPhotoScalarFieldEnum]
@@ -1049,6 +1051,20 @@ export type EnumPetReportStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$
  * Reference to a field of type 'PetReportStatus[]'
  */
 export type ListEnumPetReportStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PetReportStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DateTime'
+ */
+export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
+    
+
+
+/**
+ * Reference to a field of type 'DateTime[]'
+ */
+export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
     
 
 

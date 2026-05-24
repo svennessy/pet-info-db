@@ -46,6 +46,7 @@ export type PetMinAggregateOutputType = {
   catBreedSlug: string | null
   otherKind: string | null
   ownerId: number | null
+  createdAt: Date | null
 }
 
 export type PetMaxAggregateOutputType = {
@@ -58,6 +59,7 @@ export type PetMaxAggregateOutputType = {
   catBreedSlug: string | null
   otherKind: string | null
   ownerId: number | null
+  createdAt: Date | null
 }
 
 export type PetCountAggregateOutputType = {
@@ -70,6 +72,7 @@ export type PetCountAggregateOutputType = {
   catBreedSlug: number
   otherKind: number
   ownerId: number
+  createdAt: number
   _all: number
 }
 
@@ -94,6 +97,7 @@ export type PetMinAggregateInputType = {
   catBreedSlug?: true
   otherKind?: true
   ownerId?: true
+  createdAt?: true
 }
 
 export type PetMaxAggregateInputType = {
@@ -106,6 +110,7 @@ export type PetMaxAggregateInputType = {
   catBreedSlug?: true
   otherKind?: true
   ownerId?: true
+  createdAt?: true
 }
 
 export type PetCountAggregateInputType = {
@@ -118,6 +123,7 @@ export type PetCountAggregateInputType = {
   catBreedSlug?: true
   otherKind?: true
   ownerId?: true
+  createdAt?: true
   _all?: true
 }
 
@@ -217,6 +223,7 @@ export type PetGroupByOutputType = {
   catBreedSlug: string | null
   otherKind: string | null
   ownerId: number
+  createdAt: Date
   _count: PetCountAggregateOutputType | null
   _avg: PetAvgAggregateOutputType | null
   _sum: PetSumAggregateOutputType | null
@@ -252,6 +259,7 @@ export type PetWhereInput = {
   catBreedSlug?: Prisma.StringNullableFilter<"Pet"> | string | null
   otherKind?: Prisma.StringNullableFilter<"Pet"> | string | null
   ownerId?: Prisma.IntFilter<"Pet"> | number
+  createdAt?: Prisma.DateTimeFilter<"Pet"> | Date | string
   owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   dogBreed?: Prisma.XOR<Prisma.DogBreedNullableScalarRelationFilter, Prisma.DogBreedWhereInput> | null
   catBreed?: Prisma.XOR<Prisma.CatBreedNullableScalarRelationFilter, Prisma.CatBreedWhereInput> | null
@@ -268,6 +276,7 @@ export type PetOrderByWithRelationInput = {
   catBreedSlug?: Prisma.SortOrderInput | Prisma.SortOrder
   otherKind?: Prisma.SortOrderInput | Prisma.SortOrder
   ownerId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
   owner?: Prisma.UserOrderByWithRelationInput
   dogBreed?: Prisma.DogBreedOrderByWithRelationInput
   catBreed?: Prisma.CatBreedOrderByWithRelationInput
@@ -287,6 +296,7 @@ export type PetWhereUniqueInput = Prisma.AtLeast<{
   dogBreedSlug?: Prisma.StringNullableFilter<"Pet"> | string | null
   catBreedSlug?: Prisma.StringNullableFilter<"Pet"> | string | null
   otherKind?: Prisma.StringNullableFilter<"Pet"> | string | null
+  createdAt?: Prisma.DateTimeFilter<"Pet"> | Date | string
   owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   dogBreed?: Prisma.XOR<Prisma.DogBreedNullableScalarRelationFilter, Prisma.DogBreedWhereInput> | null
   catBreed?: Prisma.XOR<Prisma.CatBreedNullableScalarRelationFilter, Prisma.CatBreedWhereInput> | null
@@ -303,6 +313,7 @@ export type PetOrderByWithAggregationInput = {
   catBreedSlug?: Prisma.SortOrderInput | Prisma.SortOrder
   otherKind?: Prisma.SortOrderInput | Prisma.SortOrder
   ownerId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
   _count?: Prisma.PetCountOrderByAggregateInput
   _avg?: Prisma.PetAvgOrderByAggregateInput
   _max?: Prisma.PetMaxOrderByAggregateInput
@@ -323,6 +334,7 @@ export type PetScalarWhereWithAggregatesInput = {
   catBreedSlug?: Prisma.StringNullableWithAggregatesFilter<"Pet"> | string | null
   otherKind?: Prisma.StringNullableWithAggregatesFilter<"Pet"> | string | null
   ownerId?: Prisma.IntWithAggregatesFilter<"Pet"> | number
+  createdAt?: Prisma.DateTimeWithAggregatesFilter<"Pet"> | Date | string
 }
 
 export type PetCreateInput = {
@@ -331,6 +343,7 @@ export type PetCreateInput = {
   reportStatus?: $Enums.PetReportStatus
   breedLabel: string
   otherKind?: string | null
+  createdAt?: Date | string
   owner: Prisma.UserCreateNestedOneWithoutPetInput
   dogBreed?: Prisma.DogBreedCreateNestedOneWithoutPetsInput
   catBreed?: Prisma.CatBreedCreateNestedOneWithoutPetsInput
@@ -347,6 +360,7 @@ export type PetUncheckedCreateInput = {
   catBreedSlug?: string | null
   otherKind?: string | null
   ownerId: number
+  createdAt?: Date | string
   photos?: Prisma.PetPhotoUncheckedCreateNestedManyWithoutPetInput
 }
 
@@ -356,6 +370,7 @@ export type PetUpdateInput = {
   reportStatus?: Prisma.EnumPetReportStatusFieldUpdateOperationsInput | $Enums.PetReportStatus
   breedLabel?: Prisma.StringFieldUpdateOperationsInput | string
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   owner?: Prisma.UserUpdateOneRequiredWithoutPetNestedInput
   dogBreed?: Prisma.DogBreedUpdateOneWithoutPetsNestedInput
   catBreed?: Prisma.CatBreedUpdateOneWithoutPetsNestedInput
@@ -372,6 +387,7 @@ export type PetUncheckedUpdateInput = {
   catBreedSlug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ownerId?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   photos?: Prisma.PetPhotoUncheckedUpdateManyWithoutPetNestedInput
 }
 
@@ -385,6 +401,7 @@ export type PetCreateManyInput = {
   catBreedSlug?: string | null
   otherKind?: string | null
   ownerId: number
+  createdAt?: Date | string
 }
 
 export type PetUpdateManyMutationInput = {
@@ -393,6 +410,7 @@ export type PetUpdateManyMutationInput = {
   reportStatus?: Prisma.EnumPetReportStatusFieldUpdateOperationsInput | $Enums.PetReportStatus
   breedLabel?: Prisma.StringFieldUpdateOperationsInput | string
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PetUncheckedUpdateManyInput = {
@@ -405,6 +423,7 @@ export type PetUncheckedUpdateManyInput = {
   catBreedSlug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ownerId?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PetNullableScalarRelationFilter = {
@@ -422,6 +441,7 @@ export type PetCountOrderByAggregateInput = {
   catBreedSlug?: Prisma.SortOrder
   otherKind?: Prisma.SortOrder
   ownerId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type PetAvgOrderByAggregateInput = {
@@ -439,6 +459,7 @@ export type PetMaxOrderByAggregateInput = {
   catBreedSlug?: Prisma.SortOrder
   otherKind?: Prisma.SortOrder
   ownerId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type PetMinOrderByAggregateInput = {
@@ -451,6 +472,7 @@ export type PetMinOrderByAggregateInput = {
   catBreedSlug?: Prisma.SortOrder
   otherKind?: Prisma.SortOrder
   ownerId?: Prisma.SortOrder
+  createdAt?: Prisma.SortOrder
 }
 
 export type PetSumOrderByAggregateInput = {
@@ -515,6 +537,10 @@ export type EnumPetReportStatusFieldUpdateOperationsInput = {
 
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
+}
+
+export type DateTimeFieldUpdateOperationsInput = {
+  set?: Date | string
 }
 
 export type PetCreateNestedManyWithoutDogBreedInput = {
@@ -621,6 +647,7 @@ export type PetCreateWithoutOwnerInput = {
   reportStatus?: $Enums.PetReportStatus
   breedLabel: string
   otherKind?: string | null
+  createdAt?: Date | string
   dogBreed?: Prisma.DogBreedCreateNestedOneWithoutPetsInput
   catBreed?: Prisma.CatBreedCreateNestedOneWithoutPetsInput
   photos?: Prisma.PetPhotoCreateNestedManyWithoutPetInput
@@ -635,6 +662,7 @@ export type PetUncheckedCreateWithoutOwnerInput = {
   dogBreedSlug?: string | null
   catBreedSlug?: string | null
   otherKind?: string | null
+  createdAt?: Date | string
   photos?: Prisma.PetPhotoUncheckedCreateNestedManyWithoutPetInput
 }
 
@@ -660,6 +688,7 @@ export type PetUpdateWithoutOwnerInput = {
   reportStatus?: Prisma.EnumPetReportStatusFieldUpdateOperationsInput | $Enums.PetReportStatus
   breedLabel?: Prisma.StringFieldUpdateOperationsInput | string
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dogBreed?: Prisma.DogBreedUpdateOneWithoutPetsNestedInput
   catBreed?: Prisma.CatBreedUpdateOneWithoutPetsNestedInput
   photos?: Prisma.PetPhotoUpdateManyWithoutPetNestedInput
@@ -674,6 +703,7 @@ export type PetUncheckedUpdateWithoutOwnerInput = {
   dogBreedSlug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   catBreedSlug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   photos?: Prisma.PetPhotoUncheckedUpdateManyWithoutPetNestedInput
 }
 
@@ -683,6 +713,7 @@ export type PetCreateWithoutDogBreedInput = {
   reportStatus?: $Enums.PetReportStatus
   breedLabel: string
   otherKind?: string | null
+  createdAt?: Date | string
   owner: Prisma.UserCreateNestedOneWithoutPetInput
   catBreed?: Prisma.CatBreedCreateNestedOneWithoutPetsInput
   photos?: Prisma.PetPhotoCreateNestedManyWithoutPetInput
@@ -697,6 +728,7 @@ export type PetUncheckedCreateWithoutDogBreedInput = {
   catBreedSlug?: string | null
   otherKind?: string | null
   ownerId: number
+  createdAt?: Date | string
   photos?: Prisma.PetPhotoUncheckedCreateNestedManyWithoutPetInput
 }
 
@@ -739,6 +771,7 @@ export type PetScalarWhereInput = {
   catBreedSlug?: Prisma.StringNullableFilter<"Pet"> | string | null
   otherKind?: Prisma.StringNullableFilter<"Pet"> | string | null
   ownerId?: Prisma.IntFilter<"Pet"> | number
+  createdAt?: Prisma.DateTimeFilter<"Pet"> | Date | string
 }
 
 export type PetCreateWithoutPhotosInput = {
@@ -747,6 +780,7 @@ export type PetCreateWithoutPhotosInput = {
   reportStatus?: $Enums.PetReportStatus
   breedLabel: string
   otherKind?: string | null
+  createdAt?: Date | string
   owner: Prisma.UserCreateNestedOneWithoutPetInput
   dogBreed?: Prisma.DogBreedCreateNestedOneWithoutPetsInput
   catBreed?: Prisma.CatBreedCreateNestedOneWithoutPetsInput
@@ -762,6 +796,7 @@ export type PetUncheckedCreateWithoutPhotosInput = {
   catBreedSlug?: string | null
   otherKind?: string | null
   ownerId: number
+  createdAt?: Date | string
 }
 
 export type PetCreateOrConnectWithoutPhotosInput = {
@@ -786,6 +821,7 @@ export type PetUpdateWithoutPhotosInput = {
   reportStatus?: Prisma.EnumPetReportStatusFieldUpdateOperationsInput | $Enums.PetReportStatus
   breedLabel?: Prisma.StringFieldUpdateOperationsInput | string
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   owner?: Prisma.UserUpdateOneRequiredWithoutPetNestedInput
   dogBreed?: Prisma.DogBreedUpdateOneWithoutPetsNestedInput
   catBreed?: Prisma.CatBreedUpdateOneWithoutPetsNestedInput
@@ -801,6 +837,7 @@ export type PetUncheckedUpdateWithoutPhotosInput = {
   catBreedSlug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ownerId?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PetCreateWithoutCatBreedInput = {
@@ -809,6 +846,7 @@ export type PetCreateWithoutCatBreedInput = {
   reportStatus?: $Enums.PetReportStatus
   breedLabel: string
   otherKind?: string | null
+  createdAt?: Date | string
   owner: Prisma.UserCreateNestedOneWithoutPetInput
   dogBreed?: Prisma.DogBreedCreateNestedOneWithoutPetsInput
   photos?: Prisma.PetPhotoCreateNestedManyWithoutPetInput
@@ -823,6 +861,7 @@ export type PetUncheckedCreateWithoutCatBreedInput = {
   dogBreedSlug?: string | null
   otherKind?: string | null
   ownerId: number
+  createdAt?: Date | string
   photos?: Prisma.PetPhotoUncheckedCreateNestedManyWithoutPetInput
 }
 
@@ -861,6 +900,7 @@ export type PetCreateManyDogBreedInput = {
   catBreedSlug?: string | null
   otherKind?: string | null
   ownerId: number
+  createdAt?: Date | string
 }
 
 export type PetUpdateWithoutDogBreedInput = {
@@ -869,6 +909,7 @@ export type PetUpdateWithoutDogBreedInput = {
   reportStatus?: Prisma.EnumPetReportStatusFieldUpdateOperationsInput | $Enums.PetReportStatus
   breedLabel?: Prisma.StringFieldUpdateOperationsInput | string
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   owner?: Prisma.UserUpdateOneRequiredWithoutPetNestedInput
   catBreed?: Prisma.CatBreedUpdateOneWithoutPetsNestedInput
   photos?: Prisma.PetPhotoUpdateManyWithoutPetNestedInput
@@ -883,6 +924,7 @@ export type PetUncheckedUpdateWithoutDogBreedInput = {
   catBreedSlug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ownerId?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   photos?: Prisma.PetPhotoUncheckedUpdateManyWithoutPetNestedInput
 }
 
@@ -895,6 +937,7 @@ export type PetUncheckedUpdateManyWithoutDogBreedInput = {
   catBreedSlug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ownerId?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type PetCreateManyCatBreedInput = {
@@ -906,6 +949,7 @@ export type PetCreateManyCatBreedInput = {
   dogBreedSlug?: string | null
   otherKind?: string | null
   ownerId: number
+  createdAt?: Date | string
 }
 
 export type PetUpdateWithoutCatBreedInput = {
@@ -914,6 +958,7 @@ export type PetUpdateWithoutCatBreedInput = {
   reportStatus?: Prisma.EnumPetReportStatusFieldUpdateOperationsInput | $Enums.PetReportStatus
   breedLabel?: Prisma.StringFieldUpdateOperationsInput | string
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   owner?: Prisma.UserUpdateOneRequiredWithoutPetNestedInput
   dogBreed?: Prisma.DogBreedUpdateOneWithoutPetsNestedInput
   photos?: Prisma.PetPhotoUpdateManyWithoutPetNestedInput
@@ -928,6 +973,7 @@ export type PetUncheckedUpdateWithoutCatBreedInput = {
   dogBreedSlug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ownerId?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   photos?: Prisma.PetPhotoUncheckedUpdateManyWithoutPetNestedInput
 }
 
@@ -940,6 +986,7 @@ export type PetUncheckedUpdateManyWithoutCatBreedInput = {
   dogBreedSlug?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   otherKind?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ownerId?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -983,6 +1030,7 @@ export type PetSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = ru
   catBreedSlug?: boolean
   otherKind?: boolean
   ownerId?: boolean
+  createdAt?: boolean
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   dogBreed?: boolean | Prisma.Pet$dogBreedArgs<ExtArgs>
   catBreed?: boolean | Prisma.Pet$catBreedArgs<ExtArgs>
@@ -1000,6 +1048,7 @@ export type PetSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extension
   catBreedSlug?: boolean
   otherKind?: boolean
   ownerId?: boolean
+  createdAt?: boolean
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   dogBreed?: boolean | Prisma.Pet$dogBreedArgs<ExtArgs>
   catBreed?: boolean | Prisma.Pet$catBreedArgs<ExtArgs>
@@ -1015,6 +1064,7 @@ export type PetSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extension
   catBreedSlug?: boolean
   otherKind?: boolean
   ownerId?: boolean
+  createdAt?: boolean
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   dogBreed?: boolean | Prisma.Pet$dogBreedArgs<ExtArgs>
   catBreed?: boolean | Prisma.Pet$catBreedArgs<ExtArgs>
@@ -1030,9 +1080,10 @@ export type PetSelectScalar = {
   catBreedSlug?: boolean
   otherKind?: boolean
   ownerId?: boolean
+  createdAt?: boolean
 }
 
-export type PetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "species" | "reportStatus" | "breedLabel" | "dogBreedSlug" | "catBreedSlug" | "otherKind" | "ownerId", ExtArgs["result"]["pet"]>
+export type PetOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "species" | "reportStatus" | "breedLabel" | "dogBreedSlug" | "catBreedSlug" | "otherKind" | "ownerId" | "createdAt", ExtArgs["result"]["pet"]>
 export type PetInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   dogBreed?: boolean | Prisma.Pet$dogBreedArgs<ExtArgs>
@@ -1069,6 +1120,7 @@ export type $PetPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
     catBreedSlug: string | null
     otherKind: string | null
     ownerId: number
+    createdAt: Date
   }, ExtArgs["result"]["pet"]>
   composites: {}
 }
@@ -1505,6 +1557,7 @@ export interface PetFieldRefs {
   readonly catBreedSlug: Prisma.FieldRef<"Pet", 'String'>
   readonly otherKind: Prisma.FieldRef<"Pet", 'String'>
   readonly ownerId: Prisma.FieldRef<"Pet", 'Int'>
+  readonly createdAt: Prisma.FieldRef<"Pet", 'DateTime'>
 }
     
 

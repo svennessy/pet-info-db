@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -13,7 +11,152 @@ datasource db {
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id        Int    @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String @unique
+  phone     String @unique
+  cityId    String
+  city      City   @relation(fields: [cityId], references: [id])
+  pet       Pet?
+
+  @@index([cityId])
+  @@index([lastName])
+  @@map("users")
+}
+
+enum PetSpecies {
+  dog
+  cat
+  other
+}
+
+enum PetReportStatus {
+  lost
+  found
+}
+
+model Pet {
+  id           Int             @id @default(autoincrement())
+  name         String
+  species      PetSpecies
+  reportStatus PetReportStatus @default(lost)
+  breedLabel   String
+  dogBreedSlug String?
+  catBreedSlug String?
+  otherKind    String?
+  ownerId      Int             @unique
+  createdAt    DateTime        @default(now())
+  owner        User            @relation(fields: [ownerId], references: [id])
+  dogBreed     DogBreed?       @relation(fields: [dogBreedSlug], references: [slug])
+  catBreed     CatBreed?       @relation(fields: [catBreedSlug], references: [slug])
+  photos       PetPhoto[]
+
+  @@index([species])
+  @@index([reportStatus])
+  @@index([breedLabel])
+  @@index([dogBreedSlug])
+  @@index([catBreedSlug])
+  @@index([otherKind])
+  @@index([createdAt])
+  @@index([species, reportStatus])
+  @@index([species, dogBreedSlug])
+  @@index([species, catBreedSlug])
+  @@index([species, otherKind])
+  @@map("pets")
+}
+
+enum BreedCommonality {
+  very_common
+  common
+  uncommon
+  rare
+  very_rare
+}
+
+enum BreedGroup {
+  sporting
+  hound
+  working
+  terrier
+  toy
+  non_sporting
+  herding
+  misc
+  foundation
+}
+
+model DogBreed {
+  slug        String           @id
+  name        String
+  commonality BreedCommonality
+  weight      Int
+  group       BreedGroup?
+  pets        Pet[]
+
+  @@index([commonality])
+  @@index([weight])
+  @@index([name])
+  @@map("dog_breeds")
+}
+
+model PetPhoto {
+  id                  Int      @id @default(autoincrement())
+  petId               Int
+  imagePath           String
+  sortOrder           Int
+  stanfordInstanceKey String
+  createdAt           DateTime @default(now())
+  pet                 Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@unique([petId, imagePath])
+  @@index([petId])
+  @@index([petId, sortOrder])
+  @@index([stanfordInstanceKey])
+  @@index([createdAt])
+  @@map("pet_photos")
+}
+
+enum CatBreedGroup {
+  domestic
+  shorthair
+  longhair
+  semi_longhair
+  oriental
+  natural
+  rex
+  hairless
+  hybrid
+  misc
+}
+
+model CatBreed {
+  slug        String           @id
+  name        String
+  commonality BreedCommonality
+  weight      Int
+  group       CatBreedGroup?
+  pets        Pet[]
+
+  @@index([commonality])
+  @@index([weight])
+  @@index([name])
+  @@map("cat_breeds")
+}
+
+model City {
+  id          String @id
+  name        String
+  stateCode   String
+  stateName   String
+  population  Int
+  latitude    Float
+  longitude   Float
+  rankInState Int
+  users       User[]
+
+  @@index([stateCode])
+  @@index([population])
+  @@index([name])
+  @@map("cities")
 }

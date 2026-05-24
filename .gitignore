@@ -4,13 +4,17 @@ dist
 *.log
 .DS_Store
 data/stanford-dogs/
+data/stanford-dogs/dataset.json
 data/mixed-breed-dogs/images/
 data/mixed-breed-dogs/manifest.json
+data/mixed-breed-dogs/dataset.json
 src/data/stanfordDogsIndex.json
 src/data/mixedBreedDogsIndex.json
 data/oxford-cats/
 src/data/oxfordCatsIndex.json
 data/candid-cats/
+data/candid-cats/dataset.json
 src/data/candidCatsIndex.json
 data/other-pet-photos/
+data/other-pet-photos/dataset.json
 src/data/otherPetPhotosIndex.json

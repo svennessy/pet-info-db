@@ -193,8 +193,9 @@ export function OtherPhotoExplorer() {
 
       {stats && stats.petsWithPhotos === 0 && !loading && (
         <p className="hint hint-info">
-          Run <code className="mono">npm run setup:other-pet-photos</code>, then{" "}
-          <code className="mono">npm run db:seed:other-photos</code>.
+          Run <code className="mono">npm run dataset:other:fetch</code>, then{" "}
+          <code className="mono">npm run dataset:other:process</code> and{" "}
+          <code className="mono">npm run dataset:other:seed</code>.
         </p>
       )}
 

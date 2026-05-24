@@ -215,10 +215,11 @@ export function DogPhotoExplorer() {
       {stats && stats.dogsWithPhotos === 0 && !loading && (
         <p className="hint hint-info">
           Run{" "}
-          <code className="mono">npm run setup:stanford-dogs</code>,{" "}
-          <code className="mono">npm run setup:mixed-breed-dogs</code>, build
-          indexes, then{" "}
-          <code className="mono">npm run db:seed:dog-photos</code>.
+          <code className="mono">npm run dataset:dog:stanford:fetch</code>,{" "}
+          <code className="mono">npm run dataset:dog:stanford:process</code>,{" "}
+          <code className="mono">npm run dataset:dog:mutt:fetch</code>,{" "}
+          <code className="mono">npm run dataset:dog:mutt:process</code>, then{" "}
+          <code className="mono">npm run dataset:dog:seed</code>.
         </p>
       )}
 
