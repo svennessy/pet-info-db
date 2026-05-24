@@ -43,7 +43,8 @@
     "db:seed:cat-photos": "npm run dataset:cat:seed",
     "db:seed:other-photos": "npm run dataset:other:seed",
     "db:seed:dog-photos": "npm run dataset:dog:seed",
-    "db:clear:dog-photos": "tsx prisma/clear-dog-photos.ts"
+    "db:clear:dog-photos": "tsx prisma/clear-dog-photos.ts",
+    "assets:upload:supabase": "node scripts/upload-pet-images-to-supabase.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^6.19.3",

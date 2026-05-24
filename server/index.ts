@@ -10,6 +10,7 @@ import type {
   Prisma,
 } from "../src/generated/prisma/client.js";
 import { prisma } from "../prisma/db.js";
+import { mapPetPhotosResolved } from "./resolveImageUrl.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 3002;
@@ -649,7 +650,7 @@ app.get("/api/dog-pet-photos", async (req, res, next) => {
     ]);
 
     res.json({
-      pets,
+      pets: pets.map(mapPetPhotosResolved),
       total,
       page,
       limit,
@@ -786,7 +787,7 @@ app.get("/api/cat-pet-photos", async (req, res, next) => {
     ]);
 
     res.json({
-      pets,
+      pets: pets.map(mapPetPhotosResolved),
       total,
       page,
       limit,
@@ -942,7 +943,7 @@ app.get("/api/other-pet-photos", async (req, res, next) => {
     ]);
 
     res.json({
-      pets,
+      pets: pets.map(mapPetPhotosResolved),
       total,
       page,
       limit,
