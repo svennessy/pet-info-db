@@ -1,0 +1,60 @@
+{
+  "name": "react-ts-pet-db",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:client": "vite",
+    "dev:server": "tsx watch server/index.ts",
+    "build": "tsc -p tsconfig.app.json --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.server.json --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:seed:users": "tsx prisma/seed-users.ts",
+    "db:seed:pets": "tsx prisma/seed-pets.ts",
+    "db:studio": "prisma studio",
+    "build:cities": "node scripts/build-us-cities.mjs",
+    "setup:stanford-dogs": "node scripts/setup-stanford-dogs.mjs",
+    "setup:mixed-breed-dogs": "node scripts/setup-mixed-breed-dogs.mjs",
+    "build:stanford-index": "tsx scripts/build-stanford-index.ts",
+    "build:mixed-breed-index": "tsx scripts/build-mixed-breed-index.ts",
+    "setup:candid-cats": "node scripts/setup-candid-cats.mjs",
+    "setup:other-pet-photos": "node scripts/setup-other-pet-photos.mjs",
+    "setup:oxford-cats": "node scripts/setup-oxford-cats.mjs",
+    "build:oxford-cats-index": "tsx scripts/build-oxford-cats-index.ts",
+    "db:seed:cat-photos": "tsx prisma/seed-cat-pet-photos.ts",
+    "db:seed:other-photos": "tsx prisma/seed-other-pet-photos.ts",
+    "db:seed:dog-photos": "tsx prisma/seed-dog-pet-photos.ts",
+    "db:clear:dog-photos": "tsx prisma/clear-dog-photos.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "pg": "^8.16.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "all-the-cities": "^3.1.0",
+    "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.2",
+    "@types/pg": "^8.15.4",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.4.1",
+    "concurrently": "^9.1.2",
+    "dotenv": "^17.4.2",
+    "prisma": "^7.8.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}
