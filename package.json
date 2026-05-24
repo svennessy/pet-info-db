@@ -44,6 +44,7 @@
     "db:seed:other-photos": "npm run dataset:other:seed",
     "db:seed:dog-photos": "npm run dataset:dog:seed",
     "db:clear:dog-photos": "tsx prisma/clear-dog-photos.ts",
+    "db:backfill:pet-locations": "tsx prisma/backfill-pet-locations.ts",
     "assets:upload:supabase": "node scripts/upload-pet-images-to-supabase.mjs"
   },
   "dependencies": {

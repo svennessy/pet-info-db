@@ -32,6 +32,8 @@ model Pet {
   catBreedSlug String?
   otherKind    String?
   ownerId      Int             @unique
+  latitude     Float
+  longitude    Float
   reportStatus PetReportStatus @default(lost)
   createdAt    DateTime        @default(now())
   photos       PetPhoto[]
@@ -50,6 +52,7 @@ model Pet {
   @@index([species, dogBreedSlug])
   @@index([species, catBreedSlug])
   @@index([species, otherKind])
+  @@index([latitude, longitude])
   @@map("pets")
 }
 

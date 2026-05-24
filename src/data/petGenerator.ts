@@ -9,7 +9,14 @@ import {
   type PetReportStatus,
 } from "./petReportStatus";
 import { buildShuffledBreedQueue, shuffleInPlace } from "./allocateBreedPhotos";
+import { petLatLongFromCity } from "./petLocation.js";
 import { createRng, pickWeighted } from "./userGenerator";
+
+export type OwnerCityCoords = {
+  ownerId: number;
+  latitude: number;
+  longitude: number;
+};
 
 export type { PetSpeciesKind } from "./petNames";
 
@@ -28,6 +35,8 @@ export type GeneratedPet = {
   catBreedSlug: string | null;
   otherKind: string | null;
   ownerId: number;
+  latitude: number;
+  longitude: number;
 };
 
 const DOG_COUNT = 12_000;
@@ -90,8 +99,21 @@ function breedBySlug(
   return new Map(breeds.map((b) => [b.slug, b]));
 }
 
+function coordsForOwner(
+  ownerCoords: Map<number, OwnerCityCoords>,
+  ownerId: number,
+  seed: number,
+): { latitude: number; longitude: number } {
+  const city = ownerCoords.get(ownerId);
+  if (!city) {
+    throw new Error(`Missing city coords for owner ${ownerId}`);
+  }
+  return petLatLongFromCity(city.latitude, city.longitude, ownerId, seed);
+}
+
 export function generatePets(
   ownerIds: number[],
+  ownerCoords: OwnerCityCoords[],
   _dogBreeds: BreedForAssignment[],
   _catBreeds: BreedForAssignment[],
   seed = 43,
@@ -99,6 +121,15 @@ export function generatePets(
   if (ownerIds.length !== PET_COUNT) {
     throw new Error(
       `Expected ${PET_COUNT} owner ids, got ${ownerIds.length}`,
+    );
+  }
+
+  const ownerCoordsById = new Map(
+    ownerCoords.map((row) => [row.ownerId, row]),
+  );
+  if (ownerCoordsById.size !== PET_COUNT) {
+    throw new Error(
+      `Expected coords for ${PET_COUNT} owners, got ${ownerCoordsById.size}`,
     );
   }
 
@@ -129,6 +160,12 @@ export function generatePets(
     const species = speciesQueue[i];
     const reportStatus = pickReportStatus(species, rng);
     const name = pickPetName(species, reportStatus, rng);
+    const ownerId = owners[i];
+    const { latitude, longitude } = coordsForOwner(
+      ownerCoordsById,
+      ownerId,
+      seed,
+    );
 
     if (species === "dog") {
       const picked = pickWeighted(weightedDogs, rng);
@@ -140,7 +177,9 @@ export function generatePets(
         dogBreedSlug: picked.slug,
         catBreedSlug: null,
         otherKind: null,
-        ownerId: owners[i],
+        ownerId,
+        latitude,
+        longitude,
       });
     } else if (species === "cat") {
       const slug = catBreedQueue[catIdx++];
@@ -154,7 +193,9 @@ export function generatePets(
         dogBreedSlug: null,
         catBreedSlug: picked.slug,
         otherKind: null,
-        ownerId: owners[i],
+        ownerId,
+        latitude,
+        longitude,
       });
     } else {
       const kind = pickWeighted(
@@ -169,7 +210,9 @@ export function generatePets(
         dogBreedSlug: null,
         catBreedSlug: null,
         otherKind: kind,
-        ownerId: owners[i],
+        ownerId,
+        latitude,
+        longitude,
       });
     }
   }

@@ -234,6 +234,8 @@ export type PetRow = {
   catBreedSlug: string | null;
   otherKind: string | null;
   ownerId: number;
+  latitude: number;
+  longitude: number;
   dogBreed: PetBreedRef | null;
   catBreed: PetBreedRef | null;
   owner: {

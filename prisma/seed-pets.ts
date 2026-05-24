@@ -34,20 +34,28 @@ async function main() {
     throw new Error("Breed tables are empty. Run npm run db:seed first.");
   }
 
-  const ownerIds = (
-    await prisma.user.findMany({
-      select: { id: true },
-      orderBy: { id: "asc" },
-      take: PET_COUNT,
-    })
-  ).map((u) => u.id);
+  const ownerRows = await prisma.user.findMany({
+    select: {
+      id: true,
+      city: { select: { latitude: true, longitude: true } },
+    },
+    orderBy: { id: "asc" },
+    take: PET_COUNT,
+  });
+
+  const ownerIds = ownerRows.map((u) => u.id);
+  const ownerCoords = ownerRows.map((u) => ({
+    ownerId: u.id,
+    latitude: u.city.latitude,
+    longitude: u.city.longitude,
+  }));
 
   const petDogBreeds = getTopDogBreedsForPets();
   const petCatBreeds = getTopCatBreedsForPets();
   console.log(
     `Generating ${PET_COUNT} pets (60% dog, 37% cat, 3% other) — dogs: top ${TOP_DOG_BREED_LIMIT} (${petDogBreeds.length} assignable), cats: top ${TOP_CAT_BREED_LIMIT} (${petCatBreeds.length} assignable); ${catBreeds.length} cat breeds in DB…`,
   );
-  const generated = generatePets(ownerIds, dogBreeds, catBreeds, SEED);
+  const generated = generatePets(ownerIds, ownerCoords, dogBreeds, catBreeds, SEED);
 
   console.log("Clearing existing pets…");
   await prisma.pet.deleteMany();
