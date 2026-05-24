@@ -1,4 +1,4 @@
-/** Non dog/cat pets with US household popularity weights. */
+/** Non dog/cat pets with US household popularity weights (full simulation). */
 export type WeightedKind = {
   kind: string;
   weight: number;
@@ -25,4 +25,10 @@ export const OTHER_PET_KINDS: readonly WeightedKind[] = [
   { kind: "Goat", weight: 2 },
   { kind: "Pig", weight: 2 },
   { kind: "Duck", weight: 2 },
+];
+
+/** Only these appear in the bird & bunny photo explorer. */
+export const OTHER_PETS_WITH_PHOTOS: readonly WeightedKind[] = [
+  { kind: "Rabbit", weight: 55 },
+  { kind: "Bird", weight: 45 },
 ];

@@ -10,7 +10,7 @@ import {
   matchBreedToStanfordClass,
 } from "../matchStanfordBreed.js";
 import {
-  instanceKeyForFilename,
+  groupFilenamesIntoInstances,
   publicImagePath,
   stanfordLabelFromFolder,
 } from "../stanfordDogInstances.js";
@@ -87,7 +87,7 @@ export function buildStanfordDatasetFromImagesDir(
     .sort();
 
   const byLabel = buildStanfordClassLookup(classFolders);
-  const instanceMap = new Map<string, DogStanfordPhotoInstance>();
+  const instances: DogStanfordPhotoInstance[] = [];
   const byClass: Record<string, string[]> = {};
   const images: DogStanfordImage[] = [];
   const meta: DogStanfordMeta[] = [];
@@ -98,53 +98,56 @@ export function buildStanfordDatasetFromImagesDir(
     byClass[classFolder] = [];
     const label = stanfordLabelFromFolder(classFolder);
 
-    for (const filename of files) {
-      const key = instanceKeyForFilename(classFolder, filename, bucketSize);
-      const imageId = `${classFolder}/${filename}`;
-      const url = publicImagePath(classFolder, filename);
+    for (const group of groupFilenamesIntoInstances(
+      classFolder,
+      files,
+      bucketSize,
+    )) {
+      const imageIds: string[] = [];
+      const imageRows: Array<{ filename: string; path: string }> = [];
 
-      images.push({
-        id: imageId,
-        url,
-        thumbnail: null,
-        width: null,
-        height: null,
-        stanfordClass: classFolder,
-        filename,
-        source: "stanford",
-      });
+      for (const filename of group.filenames) {
+        const imageId = `${classFolder}/${filename}`;
+        const url = publicImagePath(classFolder, filename);
 
-      const tags = parseTagsFromTitle(label);
-      meta.push({
-        id: `${imageId}-meta`,
-        imageId,
-        tags,
-        mood: null,
-        environment: null,
-        titleRaw: label,
-      });
-
-      if (!instanceMap.has(key)) {
-        instanceMap.set(key, {
-          instanceKey: key,
+        images.push({
+          id: imageId,
+          url,
+          thumbnail: null,
+          width: null,
+          height: null,
           stanfordClass: classFolder,
-          imageIds: [],
-          images: [],
+          filename,
+          source: "stanford",
         });
-        byClass[classFolder].push(key);
+
+        const tags = parseTagsFromTitle(label);
+        meta.push({
+          id: `${imageId}-meta`,
+          imageId,
+          tags,
+          mood: null,
+          environment: null,
+          titleRaw: label,
+        });
+
+        imageIds.push(imageId);
+        imageRows.push({ filename, path: url });
       }
 
-      const inst = instanceMap.get(key)!;
-      inst.imageIds.push(imageId);
-      inst.images.push({ filename, path: url });
+      instances.push({
+        instanceKey: group.instanceKey,
+        stanfordClass: group.stanfordClass,
+        imageIds,
+        images: imageRows,
+      });
+      byClass[classFolder].push(group.instanceKey);
     }
   }
 
   for (const folder of classFolders) {
     byClass[folder] = [...new Set(byClass[folder])];
   }
-
-  const instances = [...instanceMap.values()].filter((i) => i.images.length > 0);
 
   const slugToClass: Record<string, string> = {};
   for (const breed of DOG_BREEDS) {

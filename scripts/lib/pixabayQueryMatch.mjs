@@ -78,6 +78,7 @@ export function tagsMatchPixabayCatQuery(tags, searchQuery) {
       "backyard",
       "house",
       "rescue",
+      "street",
       "fluffy",
       "medium",
       "hair",
@@ -114,6 +115,16 @@ export function tagsMatchPixabayRabbitQuery(tags, searchQuery) {
     "pet",
     "animal",
     "domestic",
+    "home",
+    "couch",
+    "cage",
+    "candid",
+    "window",
+    "sunlight",
+    "messy",
+    "room",
+    "holland",
+    "lop",
   ]);
   const words = phrase.split(/\s+/).filter((w) => w.length > 2 && !stopWords.has(w));
   if (words.length === 0) return true;
@@ -128,6 +139,20 @@ export function tagsMatchPixabayBirdQuery(tags, searchQuery) {
   return tagsMatchPixabayQuery(tags, searchQuery, {
     requiredInTags: "bird",
     stripSuffixes: ["bird", "birds"],
-    stopWords: ["bird", "birds", "pet", "animal", "domestic"],
+    stopWords: [
+      "bird",
+      "birds",
+      "pet",
+      "animal",
+      "domestic",
+      "home",
+      "couch",
+      "cage",
+      "candid",
+      "window",
+      "sunlight",
+      "messy",
+      "room",
+    ],
   });
 }

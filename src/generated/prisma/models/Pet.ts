@@ -8,7 +8,7 @@
  *
  * 🟢 You can import this file directly.
  */
-import type * as runtime from "@prisma/client/runtime/client"
+import type * as runtime from "@prisma/client/runtime/library"
 import type * as $Enums from "../enums.js"
 import type * as Prisma from "../internal/prismaNamespace.js"
 
@@ -231,7 +231,7 @@ export type PetGroupByOutputType = {
   _max: PetMaxAggregateOutputType | null
 }
 
-export type GetPetGroupByPayload<T extends PetGroupByArgs> = Prisma.PrismaPromise<
+type GetPetGroupByPayload<T extends PetGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PetGroupByOutputType, T['by']> &
       {
@@ -1754,11 +1754,6 @@ export type PetFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    * Skip the first `n` Pets.
    */
   skip?: number
-  /**
-   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-   * 
-   * Filter by unique combinations of Pets.
-   */
   distinct?: Prisma.PetScalarFieldEnum | Prisma.PetScalarFieldEnum[]
 }
 

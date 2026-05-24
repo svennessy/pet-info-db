@@ -161,6 +161,7 @@ export function buildCatDatasetFromManifest(
 
   for (const [slug, slugRows] of Object.entries(bySlug)) {
     byBreed[slug] = [];
+    // Batch up to 4 photos per instance — all share breedSlug (same type for carousels).
     for (let i = 0; i < slugRows.length; i += CAT_PHOTOS_PER_INSTANCE) {
       const chunk = slugRows.slice(i, i + CAT_PHOTOS_PER_INSTANCE);
       const bucketNum = Math.floor(i / CAT_PHOTOS_PER_INSTANCE) + 1;

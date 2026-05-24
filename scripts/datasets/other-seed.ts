@@ -4,9 +4,12 @@
 import { readFileSync } from "node:fs";
 import type { OtherPetLegacyIndex } from "../../src/data/datasets/otherPet.js";
 import { OTHER_LEGACY_INDEX_PATH } from "../../src/data/datasets/paths.js";
-import { OTHER_PET_PHOTO_KIND_LABELS } from "../../src/data/otherPetPhotoKinds.js";
-import { otherKindToPhotoSlug } from "../../src/data/otherPetPhotoKinds.js";
-import { createRng, pickWeighted } from "../../src/data/userGenerator.js";
+import {
+  OTHER_PET_PHOTO_KIND_LABELS,
+  photoPoolSlugForPet,
+} from "../../src/data/otherPetPhotoKinds.js";
+import { buildShuffledCountQueue } from "../../src/data/allocateBreedPhotos.js";
+import { createRng } from "../../src/data/userGenerator.js";
 import { PET_PHOTO_COUNT_WEIGHTS } from "../../src/data/oxfordCatInstances.js";
 import { prisma } from "../../prisma/db.js";
 
@@ -14,19 +17,25 @@ const SEED = 46;
 
 type PhotoInstance = {
   instanceKey: string;
+  kindSlug: string;
   images: Array<{ filename: string; path: string }>;
 };
 
+type CarouselSlide = {
+  imagePath: string;
+  instanceKey: string;
+};
+
 const PHOTO_COUNT_OPTIONS = PET_PHOTO_COUNT_WEIGHTS.map((row) => ({
-  name: String(row.count),
+  value: row.count,
   weight: row.weight,
 }));
 
-function pickPhotoCount(rng: () => number): number {
-  return Number.parseInt(pickWeighted(PHOTO_COUNT_OPTIONS, rng).name, 10);
+function pickPhotoCount(countQueue: number[], index: number): number {
+  return countQueue[index] ?? 1;
 }
 
-function shuffle<T>(items: T[], rng: () => number) {
+function shuffle<T>(items: T[], rng: () => number): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -35,15 +44,44 @@ function shuffle<T>(items: T[], rng: () => number) {
   return copy;
 }
 
-function pickInstance(
+function resolveKindPool(
+  poolSlug: string,
+  instancesByKind: Map<string, PhotoInstance[]>,
+): PhotoInstance[] {
+  return (
+    instancesByKind.get(poolSlug)?.filter((i) => i.images.length > 0) ?? []
+  );
+}
+
+/** All carousel slides from one instance (same query batch = same look). */
+function collectSameLookCarousel(
   pool: PhotoInstance[],
+  want: number,
   usedInstances: Set<string>,
   rng: () => number,
-): PhotoInstance {
-  const withImages = pool.filter((i) => i.images.length > 0);
-  const available = withImages.filter((i) => !usedInstances.has(i.instanceKey));
-  const pickFrom = available.length > 0 ? available : withImages;
-  return pickFrom[Math.floor(rng() * pickFrom.length)];
+): CarouselSlide[] {
+  if (pool.length === 0 || want <= 0) return [];
+
+  const fresh = pool.filter(
+    (i) => i.images.length > 0 && !usedInstances.has(i.instanceKey),
+  );
+  const pickFrom = fresh.length > 0 ? fresh : pool.filter((i) => i.images.length > 0);
+
+  const preferMulti = pickFrom.filter((i) => i.images.length >= Math.min(want, 2));
+  const candidates = preferMulti.length > 0 ? preferMulti : pickFrom;
+
+  const instance = candidates[Math.floor(rng() * candidates.length)];
+  usedInstances.add(instance.instanceKey);
+
+  const chosen = shuffle(instance.images, rng).slice(
+    0,
+    Math.min(want, instance.images.length),
+  );
+
+  return chosen.map((img) => ({
+    imagePath: img.path,
+    instanceKey: instance.instanceKey,
+  }));
 }
 
 export async function seedOtherPetPhotos() {
@@ -66,6 +104,7 @@ export async function seedOtherPetPhotos() {
   for (const inst of index.instances) {
     const row: PhotoInstance = {
       instanceKey: inst.instanceKey,
+      kindSlug: inst.kindSlug,
       images: inst.images,
     };
     const list = instancesByKind.get(inst.kindSlug) ?? [];
@@ -97,6 +136,11 @@ export async function seedOtherPetPhotos() {
   });
 
   const rng = createRng(SEED);
+  const photoCountQueue = buildShuffledCountQueue(
+    PHOTO_COUNT_OPTIONS,
+    pets.length,
+    rng,
+  );
   const usedInstances = new Set<string>();
   const batch: Array<{
     petId: number;
@@ -105,26 +149,27 @@ export async function seedOtherPetPhotos() {
     stanfordInstanceKey: string;
   }> = [];
 
-  for (const pet of pets) {
-    const slug = otherKindToPhotoSlug(pet.otherKind!);
-    if (!slug) continue;
+  let skippedNoPool = 0;
 
-    const pool =
-      instancesByKind.get(slug)?.filter((i) => i.images.length > 0) ?? [];
-    if (pool.length === 0) continue;
+  for (const [petIndex, pet] of pets.entries()) {
+    const poolSlug = photoPoolSlugForPet(pet.otherKind!, pet.id);
+    if (!poolSlug) continue;
 
-    const instance = pickInstance(pool, usedInstances, rng);
-    usedInstances.add(instance.instanceKey);
+    const pool = resolveKindPool(poolSlug, instancesByKind);
+    if (pool.length === 0) {
+      skippedNoPool++;
+      continue;
+    }
 
-    const want = Math.min(pickPhotoCount(rng), instance.images.length);
-    const chosen = shuffle(instance.images, rng).slice(0, want);
+    const want = pickPhotoCount(photoCountQueue, petIndex);
+    const slides = collectSameLookCarousel(pool, want, usedInstances, rng);
 
-    chosen.forEach((img, sortOrder) => {
+    slides.forEach((slide, sortOrder) => {
       batch.push({
         petId: pet.id,
-        imagePath: img.path,
+        imagePath: slide.imagePath,
         sortOrder,
-        stanfordInstanceKey: `pixabay:${instance.instanceKey}`,
+        stanfordInstanceKey: `pixabay:${slide.instanceKey}`,
       });
     });
   }
@@ -156,6 +201,9 @@ export async function seedOtherPetPhotos() {
   ]);
 
   console.log(`Done. ${photoCount} photos on ${petsWithPhotos} birds & bunnies.`);
+  if (skippedNoPool > 0) {
+    console.warn(`  ${skippedNoPool} pets had no matching photo pool.`);
+  }
 }
 
 async function main() {

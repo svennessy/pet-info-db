@@ -1,4 +1,4 @@
-import { OTHER_PET_KINDS } from "./otherPetKinds";
+import { OTHER_PETS_WITH_PHOTOS } from "./otherPetKinds";
 import { getTopCatBreedsForPets } from "./topCatBreeds";
 import { getTopDogBreedsForPets } from "./topDogBreeds";
 import { pickPetDisplayName, type PetSpeciesKind } from "./petNames";
@@ -8,6 +8,7 @@ import {
   UNKNOWN_PET_NAME,
   type PetReportStatus,
 } from "./petReportStatus";
+import { buildShuffledBreedQueue, shuffleInPlace } from "./allocateBreedPhotos";
 import { createRng, pickWeighted } from "./userGenerator";
 
 export type { PetSpeciesKind } from "./petNames";
@@ -43,13 +44,13 @@ const DOG_WEIGHT_BOOSTS: Record<string, number> = {
   "terrier-mix": 2,
 };
 
-const CAT_WEIGHT_BOOSTS: Record<string, number> = {
+export const CAT_WEIGHT_BOOSTS: Record<string, number> = {
   "domestic-shorthair": 4,
   "domestic-longhair": 3,
   "domestic-medium-hair": 3,
   "tabby-mix": 3,
-  "tuxedo": 2,
-  "calico": 2,
+  tuxedo: 2,
+  calico: 2,
 };
 
 function boostBreeds(
@@ -62,20 +63,13 @@ function boostBreeds(
   }));
 }
 
-function shuffle<T>(items: T[], rng: () => number) {
-  for (let i = items.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [items[i], items[j]] = [items[j], items[i]];
-  }
-}
-
 function buildSpeciesQueue(rng: () => number): PetSpeciesKind[] {
   const queue: PetSpeciesKind[] = [
     ...Array<"dog">(DOG_COUNT).fill("dog"),
     ...Array<"cat">(CAT_COUNT).fill("cat"),
     ...Array<"other">(OTHER_COUNT).fill("other"),
   ];
-  shuffle(queue, rng);
+  shuffleInPlace(queue, rng);
   return queue;
 }
 
@@ -88,6 +82,12 @@ function pickPetName(
     return UNKNOWN_PET_NAME;
   }
   return pickPetDisplayName(species, rng);
+}
+
+function breedBySlug(
+  breeds: BreedForAssignment[],
+): Map<string, BreedForAssignment> {
+  return new Map(breeds.map((b) => [b.slug, b]));
 }
 
 export function generatePets(
@@ -111,10 +111,17 @@ export function generatePets(
   const rng = createRng(seed);
   const speciesQueue = buildSpeciesQueue(rng);
   const owners = [...ownerIds];
-  shuffle(owners, rng);
+  shuffleInPlace(owners, rng);
 
   const weightedDogs = boostBreeds(dogBreeds, DOG_WEIGHT_BOOSTS);
-  const weightedCats = boostBreeds(catBreeds, CAT_WEIGHT_BOOSTS);
+  const catBreedQueue = buildShuffledBreedQueue(
+    catBreeds,
+    CAT_COUNT,
+    CAT_WEIGHT_BOOSTS,
+    rng,
+  );
+  const catBySlug = breedBySlug(catBreeds);
+  let catIdx = 0;
 
   const pets: GeneratedPet[] = [];
 
@@ -136,7 +143,9 @@ export function generatePets(
         ownerId: owners[i],
       });
     } else if (species === "cat") {
-      const picked = pickWeighted(weightedCats, rng);
+      const slug = catBreedQueue[catIdx++];
+      const picked = catBySlug.get(slug);
+      if (!picked) throw new Error(`Unknown cat breed slug: ${slug}`);
       pets.push({
         name,
         species,
@@ -149,7 +158,7 @@ export function generatePets(
       });
     } else {
       const kind = pickWeighted(
-        OTHER_PET_KINDS.map((k) => ({ name: k.kind, weight: k.weight })),
+        OTHER_PETS_WITH_PHOTOS.map((k) => ({ name: k.kind, weight: k.weight })),
         rng,
       ).name;
       pets.push({

@@ -17,14 +17,50 @@ export function stanfordLabelFromFolder(folderName: string): string {
     .trim();
 }
 
+export function extractStanfordImageNumber(filename: string): number {
+  const match = filename.match(/_(\d+)\.jpe?g$/i);
+  return match ? Number.parseInt(match[1], 10) : 0;
+}
+
+/**
+ * Group sorted filenames into instances of `bucketSize` consecutive shots.
+ * Stanford lists bursts of the same individual in numeric order.
+ */
+export function groupFilenamesIntoInstances(
+  classFolder: string,
+  filenames: string[],
+  bucketSize = 4,
+): Array<{ instanceKey: string; stanfordClass: string; filenames: string[] }> {
+  const sorted = [...filenames].sort(
+    (a, b) =>
+      extractStanfordImageNumber(a) - extractStanfordImageNumber(b) ||
+      a.localeCompare(b),
+  );
+  const instances: Array<{
+    instanceKey: string;
+    stanfordClass: string;
+    filenames: string[];
+  }> = [];
+
+  for (let i = 0; i < sorted.length; i += bucketSize) {
+    const chunk = sorted.slice(i, i + bucketSize);
+    const bucketNum = Math.floor(i / bucketSize);
+    instances.push({
+      instanceKey: `${classFolder}/${bucketNum}`,
+      stanfordClass: classFolder,
+      filenames: chunk,
+    });
+  }
+
+  return instances;
+}
+
 export function instanceKeyForFilename(
   classFolder: string,
   filename: string,
   bucketSize = 4,
 ): string {
-  const match = filename.match(/_(\d+)\.jpe?g$/i);
-  if (!match) return `${classFolder}/misc`;
-  const imageNum = Number.parseInt(match[1], 10);
+  const imageNum = extractStanfordImageNumber(filename);
   const bucket = Math.floor(imageNum / bucketSize);
   return `${classFolder}/${bucket}`;
 }

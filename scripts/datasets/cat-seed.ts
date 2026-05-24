@@ -12,7 +12,8 @@ import {
   type CatLegacyIndex,
 } from "../../src/data/datasets/cat.js";
 import { CAT_LEGACY_INDEX_PATH } from "../../src/data/datasets/paths.js";
-import { createRng, pickWeighted } from "../../src/data/userGenerator.js";
+import { buildShuffledCountQueue } from "../../src/data/allocateBreedPhotos.js";
+import { createRng } from "../../src/data/userGenerator.js";
 import { PET_PHOTO_COUNT_WEIGHTS } from "../../src/data/oxfordCatInstances.js";
 import { prisma } from "../../prisma/db.js";
 
@@ -20,19 +21,25 @@ const SEED = 45;
 
 type PhotoInstance = {
   instanceKey: string;
+  breedSlug: string;
   images: Array<{ filename: string; path: string }>;
 };
 
+type CarouselSlide = {
+  imagePath: string;
+  instanceKey: string;
+};
+
 const PHOTO_COUNT_OPTIONS = PET_PHOTO_COUNT_WEIGHTS.map((row) => ({
-  name: String(row.count),
+  value: row.count,
   weight: row.weight,
 }));
 
-function pickPhotoCount(rng: () => number): number {
-  return Number.parseInt(pickWeighted(PHOTO_COUNT_OPTIONS, rng).name, 10);
+function pickPhotoCount(countQueue: number[], index: number): number {
+  return countQueue[index] ?? 1;
 }
 
-function shuffle<T>(items: T[], rng: () => number) {
+function shuffle<T>(items: T[], rng: () => number): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -41,34 +48,58 @@ function shuffle<T>(items: T[], rng: () => number) {
   return copy;
 }
 
-function pickInstance(
-  pool: PhotoInstance[],
-  usedInstances: Set<string>,
-  rng: () => number,
-): PhotoInstance {
-  const withImages = pool.filter((i) => i.images.length > 0);
-  const available = withImages.filter((i) => !usedInstances.has(i.instanceKey));
-  const pickFrom = available.length > 0 ? available : withImages;
-  return pickFrom[Math.floor(rng() * pickFrom.length)];
-}
-
-function resolvePool(
-  slug: string,
-  instancesByKey: Map<string, PhotoInstance>,
+/** Allowed photo pools for this pet breed (exact slug, proxies, domestic fallback only). */
+function resolveBreedPool(
+  petBreedSlug: string,
   instancesByBreed: Map<string, PhotoInstance[]>,
 ): PhotoInstance[] {
-  const trySlugs = [slug, ...(CANDID_CAT_BREED_PROXIES[slug] ?? [])];
-  if (DOMESTIC_CAT_SLUGS.has(slug)) {
+  const trySlugs = [
+    petBreedSlug,
+    ...(CANDID_CAT_BREED_PROXIES[petBreedSlug] ?? []),
+  ];
+  if (DOMESTIC_CAT_SLUGS.has(petBreedSlug)) {
     trySlugs.push(CANDID_CAT_FALLBACK_SLUG);
   }
 
-  for (const s of trySlugs) {
-    const pool =
-      instancesByBreed.get(s)?.filter((i) => i.images.length > 0) ?? [];
-    if (pool.length > 0) return pool;
+  const pool: PhotoInstance[] = [];
+  const seen = new Set<string>();
+  for (const slug of trySlugs) {
+    for (const inst of instancesByBreed.get(slug) ?? []) {
+      if (inst.images.length === 0 || seen.has(inst.instanceKey)) continue;
+      seen.add(inst.instanceKey);
+      pool.push(inst);
+    }
+  }
+  return pool;
+}
+
+/**
+ * Build a carousel from instances that match the pet's breed type only.
+ * May use multiple instances of the same breed when one batch has fewer than `want` photos.
+ */
+function collectBreedMatchedCarousel(
+  pool: PhotoInstance[],
+  want: number,
+  usedInstances: Set<string>,
+  rng: () => number,
+): CarouselSlide[] {
+  if (pool.length === 0 || want <= 0) return [];
+
+  const withImages = pool.filter((i) => i.images.length > 0);
+  const fresh = withImages.filter((i) => !usedInstances.has(i.instanceKey));
+  const pickFrom = fresh.length > 0 ? fresh : withImages;
+
+  const slides: CarouselSlide[] = [];
+  for (const inst of shuffle(pickFrom, rng)) {
+    if (slides.length >= want) break;
+    for (const img of shuffle(inst.images, rng)) {
+      if (slides.length >= want) break;
+      slides.push({ imagePath: img.path, instanceKey: inst.instanceKey });
+    }
+    usedInstances.add(inst.instanceKey);
   }
 
-  return [...instancesByKey.values()].filter((i) => i.images.length > 0);
+  return slides;
 }
 
 export async function seedCatPetPhotos() {
@@ -86,15 +117,14 @@ export async function seedCatPetPhotos() {
     throw new Error("Cat index has no instances.");
   }
 
-  const instancesByKey = new Map<string, PhotoInstance>();
   const instancesByBreed = new Map<string, PhotoInstance[]>();
 
   for (const inst of instances) {
     const row: PhotoInstance = {
       instanceKey: inst.instanceKey,
+      breedSlug: inst.breedSlug,
       images: inst.images,
     };
-    instancesByKey.set(inst.instanceKey, row);
     const list = instancesByBreed.get(inst.breedSlug) ?? [];
     list.push(row);
     instancesByBreed.set(inst.breedSlug, list);
@@ -116,6 +146,11 @@ export async function seedCatPetPhotos() {
   });
 
   const rng = createRng(SEED);
+  const photoCountQueue = buildShuffledCountQueue(
+    PHOTO_COUNT_OPTIONS,
+    pets.length,
+    rng,
+  );
   const usedInstances = new Set<string>();
   const batch: Array<{
     petId: number;
@@ -124,21 +159,30 @@ export async function seedCatPetPhotos() {
     stanfordInstanceKey: string;
   }> = [];
 
-  for (const pet of pets) {
+  let skippedNoPool = 0;
+
+  for (const [petIndex, pet] of pets.entries()) {
     const slug = pet.catBreedSlug!;
-    const pool = resolvePool(slug, instancesByKey, instancesByBreed);
-    const instance = pickInstance(pool, usedInstances, rng);
-    usedInstances.add(instance.instanceKey);
+    const pool = resolveBreedPool(slug, instancesByBreed);
+    if (pool.length === 0) {
+      skippedNoPool++;
+      continue;
+    }
 
-    const want = Math.min(pickPhotoCount(rng), instance.images.length);
-    const chosen = shuffle(instance.images, rng).slice(0, want);
+    const want = pickPhotoCount(photoCountQueue, petIndex);
+    const slides = collectBreedMatchedCarousel(
+      pool,
+      want,
+      usedInstances,
+      rng,
+    );
 
-    chosen.forEach((img, sortOrder) => {
+    slides.forEach((slide, sortOrder) => {
       batch.push({
         petId: pet.id,
-        imagePath: img.path,
+        imagePath: slide.imagePath,
         sortOrder,
-        stanfordInstanceKey: `pixabay:${instance.instanceKey}`,
+        stanfordInstanceKey: `pixabay:${slide.instanceKey}`,
       });
     });
   }
@@ -176,6 +220,9 @@ export async function seedCatPetPhotos() {
     `Done. ${photoCount} photos on ${catsWithPhotos} cats. Distribution:`,
     byCount.map((r) => ({ photos: r.photos, cats: Number(r.cats) })),
   );
+  if (skippedNoPool > 0) {
+    console.warn(`  ${skippedNoPool} cats had no breed-matched photo pool.`);
+  }
 }
 
 async function main() {

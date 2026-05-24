@@ -7,11 +7,19 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  buildBreedQuotas,
+  CAT_PHOTO_TARGET,
+  CAT_PHOTO_WEIGHT_BOOSTS,
+} from "../lib/allocateByWeight.mjs";
+import {
   buildCatPixabayQueries,
   isPixabayCatPhoto,
   TOP_CAT_BREEDS_FOR_PHOTOS,
 } from "../lib/catPhotoFilter.mjs";
-import { tagsMatchPixabayCatQuery } from "../lib/pixabayQueryMatch.mjs";
+import {
+  normalizePixabayTags,
+  tagsMatchPixabayCatQuery,
+} from "../lib/pixabayQueryMatch.mjs";
 import {
   clearPixabayCache,
   createPixabaySeenUrls,
@@ -28,18 +36,22 @@ const DATA_DIR = join(ROOT, "data/candid-cats");
 const MANIFEST_PATH = join(DATA_DIR, "manifest.json");
 
 const MIN_WIDTH = 400;
+const FALLBACK_SLUG = "domestic-shorthair";
 
 function parseArgs() {
-  let perBreed = 55;
+  let target = CAT_PHOTO_TARGET;
+  let flatPerBreed = null;
   let fresh = false;
   for (let i = 2; i < process.argv.length; i++) {
     const arg = process.argv[i];
     if (arg === "--fresh") fresh = true;
-    else if (arg === "--per-breed" && process.argv[i + 1]) {
-      perBreed = Math.max(15, Number.parseInt(process.argv[++i], 10));
+    else if (arg === "--target" && process.argv[i + 1]) {
+      target = Math.max(100, Number.parseInt(process.argv[++i], 10));
+    } else if (arg === "--per-breed" && process.argv[i + 1]) {
+      flatPerBreed = Math.max(15, Number.parseInt(process.argv[++i], 10));
     }
   }
-  return { perBreed, fresh };
+  return { target, flatPerBreed, fresh };
 }
 
 function getPixabayKey() {
@@ -54,32 +66,59 @@ function saveManifest(manifest) {
   writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
 }
 
-async function harvestBreed(breed, target, apiKey, usedUrls, manifest, nextIdRef) {
-  const queries = buildCatPixabayQueries(breed);
-  let collected = manifest.filter((m) => m.breedSlug === breed.slug).length;
+function breedBySlug(slug) {
+  return TOP_CAT_BREEDS_FOR_PHOTOS.find((b) => b.slug === slug);
+}
 
-  console.log(`${breed.slug}: ${collected}/${target}`);
+function countForBreed(manifest, slug) {
+  return manifest.filter((m) => m.breedSlug === slug).length;
+}
+
+async function fetchBatchWithRetry(query, page, apiKey, usedUrls) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await fetchPixabayCatBatch(query, page, apiKey, usedUrls);
+    } catch (error) {
+      if (String(error.message).includes("429") && attempt < 2) {
+        console.warn("    rate limited, waiting 3s…");
+        await sleep(3000);
+        continue;
+      }
+      console.warn(`  skip "${query}" p${page}: ${error.message}`);
+      return null;
+    }
+  }
+  return null;
+}
+
+function acceptPhoto(photo, query, strictBreedMatch) {
+  if (!isPixabayCatPhoto(photo.title, photo.pixabayType)) return false;
+  if (strictBreedMatch) {
+    return tagsMatchPixabayCatQuery(photo.title, query);
+  }
+  return normalizePixabayTags(photo.title).includes("cat");
+}
+
+async function harvestWithQueries(
+  labelBreed,
+  queryBreed,
+  target,
+  apiKey,
+  usedUrls,
+  manifest,
+  nextIdRef,
+  strictBreedMatch,
+) {
+  let collected = countForBreed(manifest, labelBreed.slug);
+  if (collected >= target) return collected;
+
+  const queries = buildCatPixabayQueries(queryBreed);
 
   for (const query of queries) {
     if (collected >= target) break;
 
     for (let page = 1; page <= 6 && collected < target; page++) {
-      let batch;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          batch = await fetchPixabayCatBatch(query, page, apiKey, usedUrls);
-          break;
-        } catch (error) {
-          if (String(error.message).includes("429") && attempt < 2) {
-            console.warn("    rate limited, waiting 3s…");
-            await sleep(3000);
-            continue;
-          }
-          console.warn(`  skip "${query}" p${page}: ${error.message}`);
-          batch = null;
-          break;
-        }
-      }
+      const batch = await fetchBatchWithRetry(query, page, apiKey, usedUrls);
       if (!batch?.length) break;
 
       for (const photo of batch) {
@@ -88,14 +127,12 @@ async function harvestBreed(breed, target, apiKey, usedUrls, manifest, nextIdRef
         const imagePath = photo.imageUrl;
         if (!imagePath || isPixabayUrlSeen(usedUrls, imagePath)) continue;
         if ((photo.width ?? 0) > 0 && photo.width < MIN_WIDTH) continue;
-        if (!isPixabayCatPhoto(photo.title, photo.pixabayType)) continue;
-        // Breed locked to this harvest + query (not inferred from loose tags).
-        if (!tagsMatchPixabayCatQuery(photo.title, query)) continue;
+        if (!acceptPhoto(photo, query, strictBreedMatch)) continue;
 
         markPixabayUrlSeen(usedUrls, imagePath);
         manifest.push({
-          id: `${breed.slug}-${String(nextIdRef.value).padStart(5, "0")}`,
-          breedSlug: breed.slug,
+          id: `${labelBreed.slug}-${String(nextIdRef.value).padStart(5, "0")}`,
+          breedSlug: labelBreed.slug,
           imagePath,
           sourceUrl: imagePath,
           title: photo.title,
@@ -116,6 +153,66 @@ async function harvestBreed(breed, target, apiKey, usedUrls, manifest, nextIdRef
   return collected;
 }
 
+async function harvestBreed(breed, target, apiKey, usedUrls, manifest, nextIdRef) {
+  let collected = countForBreed(manifest, breed.slug);
+  console.log(`${breed.slug}: ${collected}/${target}`);
+
+  if (collected >= target) return collected;
+
+  collected = await harvestWithQueries(
+    breed,
+    breed,
+    target,
+    apiKey,
+    usedUrls,
+    manifest,
+    nextIdRef,
+    true,
+  );
+
+  if (collected >= target || breed.slug === FALLBACK_SLUG) {
+    return collected;
+  }
+
+  const fallbackBreed = breedBySlug(FALLBACK_SLUG);
+  if (!fallbackBreed) return collected;
+
+  console.warn(
+    `  ${breed.slug}: topping up ${target - collected} via ${FALLBACK_SLUG} queries`,
+  );
+
+  return harvestWithQueries(
+    breed,
+    fallbackBreed,
+    target,
+    apiKey,
+    usedUrls,
+    manifest,
+    nextIdRef,
+    false,
+  );
+}
+
+function buildHarvestQuotas(target, flatPerBreed) {
+  if (flatPerBreed != null) {
+    return TOP_CAT_BREEDS_FOR_PHOTOS.map((breed) => ({
+      breed,
+      target: flatPerBreed,
+    }));
+  }
+
+  const quotas = buildBreedQuotas(
+    TOP_CAT_BREEDS_FOR_PHOTOS.map((b) => ({ slug: b.slug, weight: b.weight })),
+    target,
+    CAT_PHOTO_WEIGHT_BOOSTS,
+  );
+
+  return quotas.map(({ slug, target: breedTarget }) => ({
+    breed: breedBySlug(slug),
+    target: breedTarget,
+  }));
+}
+
 async function main() {
   const apiKey = getPixabayKey();
   if (!apiKey) {
@@ -124,7 +221,7 @@ async function main() {
     );
   }
 
-  const { perBreed, fresh } = parseArgs();
+  const { target, flatPerBreed, fresh } = parseArgs();
   if (fresh) clearPixabayCache();
   mkdirSync(DATA_DIR, { recursive: true });
 
@@ -150,24 +247,32 @@ async function main() {
     }
   }
 
+  const breedTargets = buildHarvestQuotas(target, flatPerBreed);
+  const quotaTotal = breedTargets.reduce((sum, row) => sum + row.target, 0);
+
   console.log(
-    `Fetching breed-matched cat photos from Pixabay (${TOP_CAT_BREEDS_FOR_PHOTOS.length} breeds)…`,
+    `Fetching breed-matched cat photos from Pixabay (${TOP_CAT_BREEDS_FOR_PHOTOS.length} breeds, ${quotaTotal} photo quota)…`,
+  );
+  console.log(
+    "Quotas:",
+    Object.fromEntries(
+      breedTargets.map(({ breed, target: t }) => [breed.slug, t]),
+    ),
   );
 
-  for (const breed of TOP_CAT_BREEDS_FOR_PHOTOS) {
-    const have = manifest.filter((m) => m.breedSlug === breed.slug).length;
-    if (have >= perBreed) continue;
+  for (const { breed, target: breedTarget } of breedTargets) {
+    if (!breed || breedTarget <= 0) continue;
 
     const got = await harvestBreed(
       breed,
-      perBreed,
+      breedTarget,
       apiKey,
       usedUrls,
       manifest,
       nextIdRef,
     );
-    if (got < perBreed) {
-      console.warn(`  ⚠ ${breed.slug}: only ${got}/${perBreed} breed-matched photos`);
+    if (got < breedTarget) {
+      console.warn(`  ⚠ ${breed.slug}: only ${got}/${breedTarget} photos`);
     }
     saveManifest(manifest);
   }

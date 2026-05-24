@@ -97,24 +97,28 @@ export function buildOtherPetDatasetFromManifest(
   const images = rows.map(manifestRowToOtherPetImage);
   const meta = rows.map(manifestRowToOtherPetMeta);
 
-  const bySlug: Record<string, OtherPetManifestRow[]> = {};
+  const byPool: Record<string, OtherPetManifestRow[]> = {};
   for (const row of rows) {
-    (bySlug[row.kindSlug] ??= []).push(row);
+    const poolKey = `${row.kindSlug}::${row.searchQuery ?? "generic"}`;
+    (byPool[poolKey] ??= []).push(row);
   }
 
   const byKind: Record<string, string[]> = {};
   const instances: OtherPetPhotoInstance[] = [];
 
-  for (const [slug, slugRows] of Object.entries(bySlug)) {
-    byKind[slug] = [];
-    for (let i = 0; i < slugRows.length; i += OTHER_PHOTOS_PER_INSTANCE) {
-      const chunk = slugRows.slice(i, i + OTHER_PHOTOS_PER_INSTANCE);
+  for (const [poolKey, poolRows] of Object.entries(byPool)) {
+    const kindSlug = poolKey.split("::")[0];
+    if (!byKind[kindSlug]) byKind[kindSlug] = [];
+
+    for (let i = 0; i < poolRows.length; i += OTHER_PHOTOS_PER_INSTANCE) {
+      const chunk = poolRows.slice(i, i + OTHER_PHOTOS_PER_INSTANCE);
       const bucketNum = Math.floor(i / OTHER_PHOTOS_PER_INSTANCE) + 1;
-      const instanceKey = `${slug}/${String(bucketNum).padStart(4, "0")}`;
-      byKind[slug].push(instanceKey);
+      const querySlug = poolKey.replace(/[^a-z0-9]+/gi, "-").slice(0, 48);
+      const instanceKey = `${kindSlug}/${querySlug}/${String(bucketNum).padStart(4, "0")}`;
+      byKind[kindSlug].push(instanceKey);
       instances.push({
         instanceKey,
-        kindSlug: slug,
+        kindSlug,
         imageIds: chunk.map((r) => r.id),
         images: chunk.map((row) => ({
           filename: row.id,

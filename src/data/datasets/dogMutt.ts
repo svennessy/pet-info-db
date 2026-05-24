@@ -82,23 +82,30 @@ export function manifestRowToDogMuttMeta(row: DogMuttManifestRow): DogMuttMeta {
   };
 }
 
-/** One Wikimedia URL per instance (matches legacy mutt index). */
+export const MUTT_PHOTOS_PER_INSTANCE = 4;
+
+/** One Wikimedia URL per row; batch into instances for carousels. */
 export function buildDogMuttDatasetFromManifest(
   rows: DogMuttManifestRow[],
   options?: { builtAt?: string; source?: string },
 ): DogMuttDataset {
   const images = rows.map(manifestRowToDogMuttImage);
   const meta = rows.map(manifestRowToDogMuttMeta);
-  const instances: DogMuttPhotoInstance[] = rows.map((row) => ({
-    instanceKey: row.id,
-    imageIds: [row.id],
-    images: [
-      {
+  const instances: DogMuttPhotoInstance[] = [];
+
+  for (let i = 0; i < rows.length; i += MUTT_PHOTOS_PER_INSTANCE) {
+    const chunk = rows.slice(i, i + MUTT_PHOTOS_PER_INSTANCE);
+    const bucketNum = Math.floor(i / MUTT_PHOTOS_PER_INSTANCE) + 1;
+    const instanceKey = `mutt/${String(bucketNum).padStart(5, "0")}`;
+    instances.push({
+      instanceKey,
+      imageIds: chunk.map((r) => r.id),
+      images: chunk.map((row) => ({
         filename: row.title ?? row.id,
         path: row.imagePath,
-      },
-    ],
-  }));
+      })),
+    });
+  }
 
   return {
     builtAt: options?.builtAt ?? new Date().toISOString(),

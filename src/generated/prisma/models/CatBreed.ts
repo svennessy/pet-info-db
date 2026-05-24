@@ -8,7 +8,7 @@
  *
  * 🟢 You can import this file directly.
  */
-import type * as runtime from "@prisma/client/runtime/client"
+import type * as runtime from "@prisma/client/runtime/library"
 import type * as $Enums from "../enums.js"
 import type * as Prisma from "../internal/prismaNamespace.js"
 
@@ -192,7 +192,7 @@ export type CatBreedGroupByOutputType = {
   _max: CatBreedMaxAggregateOutputType | null
 }
 
-export type GetCatBreedGroupByPayload<T extends CatBreedGroupByArgs> = Prisma.PrismaPromise<
+type GetCatBreedGroupByPayload<T extends CatBreedGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<CatBreedGroupByOutputType, T['by']> &
       {
@@ -1138,11 +1138,6 @@ export type CatBreedFindManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
    * Skip the first `n` CatBreeds.
    */
   skip?: number
-  /**
-   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-   * 
-   * Filter by unique combinations of CatBreeds.
-   */
   distinct?: Prisma.CatBreedScalarFieldEnum | Prisma.CatBreedScalarFieldEnum[]
 }
 

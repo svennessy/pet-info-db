@@ -167,6 +167,9 @@ const CANDID_CAT_SCENES = [
 ];
 
 const GENERIC_CANDID_CAT_QUERIES = [
+  "cat home",
+  "cat couch",
+  "cat street",
   "cat window sunlight",
   "cat hiding under table",
   "house cat candid",
@@ -260,12 +263,13 @@ const PIXABAY_QUERY_OVERRIDES = {
   ],
 };
 
-/** Top 20 cat breeds for pets (by weight) with extra Wikimedia search terms. */
+/** Top 20 cat breeds for photo harvest (weight = US commonality band). */
 export const TOP_CAT_BREEDS_FOR_PHOTOS = [
   {
     slug: "domestic-shorthair",
     name: "Domestic Shorthair",
     group: "domestic",
+    weight: 100,
     extraQueries: [
       "rescue cat smartphone",
       "tabby house cat backyard",
@@ -275,114 +279,133 @@ export const TOP_CAT_BREEDS_FOR_PHOTOS = [
     slug: "domestic-longhair",
     name: "Domestic Longhair",
     group: "domestic",
+    weight: 98,
     extraQueries: ["rescue longhair cat", "fluffy cat window sunlight"],
   },
   {
     slug: "domestic-medium-hair",
     name: "Domestic Medium Hair",
     group: "domestic",
+    weight: 96,
     extraQueries: ["medium hair cat home", "house cat medium coat"],
   },
   {
     slug: "tabby-mix",
     name: "Tabby Mix",
     group: "domestic",
+    weight: 95,
     extraQueries: ["mackerel tabby cat home", "brown tabby cat couch"],
   },
   {
     slug: "tuxedo",
     name: "Tuxedo (Domestic)",
     group: "domestic",
+    weight: 90,
     extraQueries: ["black and white house cat", "tuxedo cat window sunlight"],
   },
   {
     slug: "calico",
     name: "Calico (Domestic)",
     group: "domestic",
+    weight: 88,
     extraQueries: ["calico cat couch", "calico house cat window"],
   },
   {
     slug: "torbie",
     name: "Torbie (Domestic)",
     group: "domestic",
+    weight: 86,
     extraQueries: ["torbie cat patched tabby", "tortoiseshell tabby cat"],
   },
   {
     slug: "american-shorthair",
     name: "American Shorthair",
     group: "shorthair",
+    weight: 85,
     extraQueries: ["american shorthair cat pet home"],
   },
   {
     slug: "siamese",
     name: "Siamese",
     group: "oriental",
+    weight: 84,
     extraQueries: ["siamese cat couch", "siamese cat messy room"],
   },
   {
     slug: "maine-coon",
     name: "Maine Coon",
     group: "natural",
+    weight: 83,
     extraQueries: ["maine coon cat home", "maine coon cat couch"],
   },
   {
     slug: "ragdoll",
     name: "Ragdoll",
     group: "semi_longhair",
+    weight: 82,
     extraQueries: ["ragdoll cat couch", "ragdoll cat home"],
   },
   {
     slug: "persian",
     name: "Persian",
     group: "longhair",
+    weight: 81,
     extraQueries: ["persian cat messy room", "persian cat couch"],
   },
   {
     slug: "bengal",
     name: "Bengal",
     group: "hybrid",
+    weight: 80,
     extraQueries: ["bengal cat pet home", "bengal kitten candid"],
   },
   {
     slug: "russian-blue",
     name: "Russian Blue",
     group: "shorthair",
+    weight: 78,
     extraQueries: ["russian blue cat pet", "russian blue kitten home"],
   },
   {
     slug: "british-shorthair",
     name: "British Shorthair",
     group: "shorthair",
+    weight: 77,
     extraQueries: ["british shorthair cat pet home"],
   },
   {
     slug: "scottish-fold",
     name: "Scottish Fold",
     group: "shorthair",
+    weight: 76,
     extraQueries: ["scottish fold cat pet", "scottish fold kitten home"],
   },
   {
     slug: "sphynx",
     name: "Sphynx",
     group: "hairless",
+    weight: 75,
     extraQueries: ["sphynx cat home pet", "hairless cat candid"],
   },
   {
     slug: "abyssinian",
     name: "Abyssinian",
     group: "shorthair",
+    weight: 74,
     extraQueries: ["abyssinian cat pet home"],
   },
   {
     slug: "exotic-shorthair",
     name: "Exotic Shorthair",
     group: "shorthair",
+    weight: 73,
     extraQueries: ["exotic shorthair cat pet", "exotic shorthair kitten home"],
   },
   {
     slug: "devon-rex",
     name: "Devon Rex",
     group: "rex",
+    weight: 72,
     extraQueries: ["devon rex cat pet", "devon rex kitten home"],
   },
 ];

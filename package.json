@@ -15,7 +15,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:users": "tsx prisma/seed-users.ts",
     "db:seed:pets": "tsx prisma/seed-pets.ts",
+    "db:seed:all": "npm run db:seed && tsx prisma/clear-pets.ts && npm run db:seed:users && npm run db:seed:pets && npm run db:seed:dog-photos && npm run db:seed:cat-photos && npm run db:seed:other-photos",
     "db:studio": "prisma studio",
+    "db:test": "tsx scripts/test-db-connection.ts",
     "build:cities": "node scripts/build-us-cities.mjs",
     "setup:stanford-dogs": "node scripts/setup-stanford-dogs.mjs",
     "dataset:dog:stanford:fetch": "node scripts/datasets/dog-stanford-fetch.mjs",
@@ -41,12 +43,11 @@
     "db:seed:dog-photos": "npm run dataset:dog:seed",
     "db:clear:dog-photos": "tsx prisma/clear-dog-photos.ts"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
+    "@prisma/adapter-pg": "^6.19.3",
+    "@prisma/client": "^6.19.3",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.106.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "pg": "^8.16.0",
@@ -54,16 +55,16 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "all-the-cities": "^3.1.0",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
     "@types/pg": "^8.15.4",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
+    "all-the-cities": "^3.1.0",
     "concurrently": "^9.1.2",
     "dotenv": "^17.4.2",
-    "prisma": "^7.8.0",
+    "prisma": "^6.19.3",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"

@@ -2,7 +2,8 @@
  * Layer 3 — Seed: assign Stanford + mutt photos to dog pets in the database.
  */
 import { readFileSync } from "node:fs";
-import { createRng, pickWeighted } from "../../src/data/userGenerator.js";
+import { buildShuffledCountQueue } from "../../src/data/allocateBreedPhotos.js";
+import { createRng } from "../../src/data/userGenerator.js";
 import { STANFORD_FALLBACK_CLASS } from "../../src/data/matchStanfordBreed.js";
 import { BREED_STANFORD_PHOTO_CLASS } from "../../src/data/stanfordMixedBreedPool.js";
 import { isMixedBreedDogSlug } from "../../src/data/mixedBreedDogPhotos.js";
@@ -19,19 +20,25 @@ const SEED = 44;
 
 type PhotoInstance = {
   instanceKey: string;
+  stanfordClass?: string;
   images: Array<{ filename: string; path: string }>;
 };
 
+type CarouselSlide = {
+  imagePath: string;
+  instanceKey: string;
+};
+
 const PHOTO_COUNT_OPTIONS = PET_PHOTO_COUNT_WEIGHTS.map((row) => ({
-  name: String(row.count),
+  value: row.count,
   weight: row.weight,
 }));
 
-function pickPhotoCount(rng: () => number): number {
-  return Number.parseInt(pickWeighted(PHOTO_COUNT_OPTIONS, rng).name, 10);
+function pickPhotoCount(countQueue: number[], index: number): number {
+  return countQueue[index] ?? 1;
 }
 
-function shuffle<T>(items: T[], rng: () => number) {
+function shuffle<T>(items: T[], rng: () => number): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -40,15 +47,80 @@ function shuffle<T>(items: T[], rng: () => number) {
   return copy;
 }
 
-function pickInstance(
+function resolveStanfordPool(
+  slug: string,
+  index: DogStanfordLegacyIndex,
+  instancesByClass: Map<string, PhotoInstance[]>,
+): PhotoInstance[] {
+  const stanfordClass =
+    BREED_STANFORD_PHOTO_CLASS[slug] ??
+    index.slugToClass[slug] ??
+    STANFORD_FALLBACK_CLASS;
+
+  return (
+    instancesByClass.get(stanfordClass)?.filter((i) => i.images.length > 0) ??
+    []
+  );
+}
+
+/**
+ * Carousel from a single Stanford instance — same individual as the cover (sortOrder 0).
+ */
+function collectSameDogCarousel(
   pool: PhotoInstance[],
+  want: number,
   usedInstances: Set<string>,
   rng: () => number,
-): PhotoInstance {
-  const withImages = pool.filter((i) => i.images.length > 0);
-  const available = withImages.filter((i) => !usedInstances.has(i.instanceKey));
-  const pickFrom = available.length > 0 ? available : withImages;
-  return pickFrom[Math.floor(rng() * pickFrom.length)];
+): CarouselSlide[] {
+  if (pool.length === 0 || want <= 0) return [];
+
+  const fresh = pool.filter(
+    (i) => i.images.length > 0 && !usedInstances.has(i.instanceKey),
+  );
+  const pickFrom = fresh.length > 0 ? fresh : pool.filter((i) => i.images.length > 0);
+
+  const preferMulti = pickFrom.filter((i) => i.images.length >= Math.min(want, 2));
+  const candidates = preferMulti.length > 0 ? preferMulti : pickFrom;
+
+  const instance = candidates[Math.floor(rng() * candidates.length)];
+  usedInstances.add(instance.instanceKey);
+
+  const chosen = shuffle(instance.images, rng).slice(
+    0,
+    Math.min(want, instance.images.length),
+  );
+
+  return chosen.map((img) => ({
+    imagePath: img.path,
+    instanceKey: instance.instanceKey,
+  }));
+}
+
+function collectMuttCarousel(
+  pool: PhotoInstance[],
+  want: number,
+  usedInstances: Set<string>,
+  rng: () => number,
+): CarouselSlide[] {
+  if (pool.length === 0 || want <= 0) return [];
+
+  const fresh = pool.filter(
+    (i) => i.images.length > 0 && !usedInstances.has(i.instanceKey),
+  );
+  const pickFrom = fresh.length > 0 ? fresh : pool.filter((i) => i.images.length > 0);
+
+  const instance = pickFrom[Math.floor(rng() * pickFrom.length)];
+  usedInstances.add(instance.instanceKey);
+
+  const chosen = shuffle(instance.images, rng).slice(
+    0,
+    Math.min(want, instance.images.length),
+  );
+
+  return chosen.map((img) => ({
+    imagePath: img.path,
+    instanceKey: instance.instanceKey,
+  }));
 }
 
 export async function seedDogPetPhotos() {
@@ -71,7 +143,7 @@ export async function seedDogPetPhotos() {
     ) as DogMuttLegacyIndex;
   } catch {
     throw new Error(
-      `Missing mutt index. Run: npm run dataset:dog:mutt:fetch && npm run dataset:dog:mutt:process`,
+      "Missing mutt index. Run: npm run dataset:dog:mutt:fetch && npm run dataset:dog:mutt:process",
     );
   }
 
@@ -81,14 +153,24 @@ export async function seedDogPetPhotos() {
     );
   }
 
-  const instancesByClass = new Map<string, DogStanfordLegacyIndex["instances"]>();
+  const instancesByClass = new Map<string, PhotoInstance[]>();
   for (const inst of index.instances) {
+    const row: PhotoInstance = {
+      instanceKey: inst.instanceKey,
+      stanfordClass: inst.stanfordClass,
+      images: inst.images,
+    };
     const list = instancesByClass.get(inst.stanfordClass) ?? [];
-    list.push(inst);
+    list.push(row);
     instancesByClass.set(inst.stanfordClass, list);
   }
 
-  const muttPool = muttIndex.instances.filter((i) => i.images.length > 0);
+  const muttPool: PhotoInstance[] = muttIndex.instances
+    .filter((i) => i.images.length > 0)
+    .map((inst) => ({
+      instanceKey: inst.instanceKey,
+      images: inst.images,
+    }));
 
   const pets = await prisma.pet.findMany({
     where: { species: "dog", dogBreedSlug: { not: null } },
@@ -112,6 +194,11 @@ export async function seedDogPetPhotos() {
   });
 
   const rng = createRng(SEED);
+  const photoCountQueue = buildShuffledCountQueue(
+    PHOTO_COUNT_OPTIONS,
+    pets.length,
+    rng,
+  );
   const usedStanfordInstances = new Set<string>();
   const usedMuttInstances = new Set<string>();
   const batch: Array<{
@@ -121,52 +208,37 @@ export async function seedDogPetPhotos() {
     stanfordInstanceKey: string;
   }> = [];
 
-  for (const pet of pets) {
+  let skippedNoPool = 0;
+
+  for (const [petIndex, pet] of pets.entries()) {
     const slug = pet.dogBreedSlug!;
     const useMuttPhotos = isMixedBreedDogSlug(slug);
+    const want = useMuttPhotos
+      ? 1
+      : pickPhotoCount(photoCountQueue, petIndex);
 
-    if (useMuttPhotos) {
-      const instance = pickInstance(muttPool, usedMuttInstances, rng);
-      usedMuttInstances.add(instance.instanceKey);
+    const slides = useMuttPhotos
+      ? collectMuttCarousel(muttPool, want, usedMuttInstances, rng)
+      : collectSameDogCarousel(
+          resolveStanfordPool(slug, index, instancesByClass),
+          want,
+          usedStanfordInstances,
+          rng,
+        );
 
-      const want = Math.min(pickPhotoCount(rng), instance.images.length);
-      const chosen = shuffle(instance.images, rng).slice(0, want);
-
-      chosen.forEach((img, sortOrder) => {
-        batch.push({
-          petId: pet.id,
-          imagePath: img.path,
-          sortOrder,
-          stanfordInstanceKey: `mutt:${instance.instanceKey}`,
-        });
-      });
+    if (slides.length === 0) {
+      skippedNoPool++;
       continue;
     }
 
-    const stanfordClass =
-      BREED_STANFORD_PHOTO_CLASS[slug] ??
-      index.slugToClass[slug] ??
-      STANFORD_FALLBACK_CLASS;
-    let pool =
-      instancesByClass.get(stanfordClass)?.filter((i) => i.images.length > 0) ??
-      [];
-
-    if (pool.length === 0) {
-      pool = index.instances.filter((i) => i.images.length > 0);
-    }
-
-    const instance = pickInstance(pool, usedStanfordInstances, rng);
-    usedStanfordInstances.add(instance.instanceKey);
-
-    const want = Math.min(pickPhotoCount(rng), instance.images.length);
-    const chosen = shuffle(instance.images, rng).slice(0, want);
-
-    chosen.forEach((img, sortOrder) => {
+    slides.forEach((slide, sortOrder) => {
       batch.push({
         petId: pet.id,
-        imagePath: img.path,
+        imagePath: slide.imagePath,
         sortOrder,
-        stanfordInstanceKey: instance.instanceKey,
+        stanfordInstanceKey: useMuttPhotos
+          ? `mutt:${slide.instanceKey}`
+          : slide.instanceKey,
       });
     });
   }
@@ -204,6 +276,9 @@ export async function seedDogPetPhotos() {
     `Done. ${photoCount} photos on ${petsWithPhotos} dogs. Distribution:`,
     byCount.map((r) => ({ photos: r.photos, dogs: Number(r.dogs) })),
   );
+  if (skippedNoPool > 0) {
+    console.warn(`  ${skippedNoPool} dogs had no breed-matched photo pool.`);
+  }
 }
 
 async function main() {
