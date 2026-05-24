@@ -8,6 +8,8 @@
     "dev:client": "vite",
     "dev:server": "tsx watch server/index.ts",
     "build": "tsc -p tsconfig.app.json --noEmit && vite build",
+    "build:render": "npm run db:generate && vite build",
+    "start": "tsx server/index.ts",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.server.json --noEmit",
     "db:generate": "prisma generate",
@@ -51,8 +53,10 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "pg": "^8.16.0",
+    "prisma": "^6.19.3",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "tsx": "^4.20.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.18",
@@ -64,8 +68,6 @@
     "all-the-cities": "^3.1.0",
     "concurrently": "^9.1.2",
     "dotenv": "^17.4.2",
-    "prisma": "^6.19.3",
-    "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
   }

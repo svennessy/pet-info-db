@@ -1,0 +1,16 @@
+# Render Blueprint — https://pet-info-db.onrender.com
+# Set DATABASE_URL in the Render dashboard (Supabase Session pooler URI).
+
+services:
+  - type: web
+    name: pet-info-db
+    runtime: node
+    plan: free
+    buildCommand: NPM_CONFIG_PRODUCTION=false npm install && npm run build:render
+    startCommand: npx prisma migrate deploy && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false

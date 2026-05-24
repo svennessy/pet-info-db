@@ -17,6 +17,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const stanfordRoot = path.join(__dirname, "../data/stanford-dogs");
 const mixedBreedRoot = path.join(__dirname, "../data/mixed-breed-dogs");
 const oxfordCatsRoot = path.join(__dirname, "../data/oxford-cats");
+const distRoot = path.join(__dirname, "../dist");
+const isProduction = process.env.NODE_ENV === "production";
 
 const BREED_SORT_FIELDS = ["name", "weight", "commonality", "group"] as const;
 type BreedSortField = (typeof BREED_SORT_FIELDS)[number];
@@ -75,8 +77,14 @@ function parseListQuery(
   return { sortField, order, search };
 }
 
-app.get("/api/health", (_req, res) => {
-  res.json({ ok: true });
+app.get("/api/health", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ ok: true, db: true });
+  } catch (error) {
+    console.error("Health check DB error:", error);
+    res.status(503).json({ ok: false, db: false });
+  }
 });
 
 app.get("/api/stats", async (req, res, next) => {
@@ -999,6 +1007,13 @@ app.get("/api/breeds", async (req, res, next) => {
     next(error);
   }
 });
+
+if (isProduction) {
+  app.use(express.static(distRoot));
+  app.get(/^(?!\/api\/|\/stanford-dogs|\/mixed-breed-dogs|\/oxford-cats).*/, (_req, res) => {
+    res.sendFile(path.join(distRoot, "index.html"));
+  });
+}
 
 app.use(
   (
