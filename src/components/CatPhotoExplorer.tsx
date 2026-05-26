@@ -9,6 +9,7 @@ import {
   type CatPetPhotoRow,
   type PetReportStatus,
 } from "../api";
+import { photoDisplayUrl } from "../lib/resolveAssetUrl";
 import { BreedFilterSelect } from "./BreedFilterSelect";
 
 const PAGE_SIZE = 24;
@@ -18,28 +19,46 @@ const STATUS_LABELS: Record<PetReportStatus, string> = {
   found: "Found",
 };
 
+const PLACEHOLDER_SRC =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect fill="#e8ecef" width="100%" height="100%"/><text x="50%" y="50%" fill="#6c757d" font-family="sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle">Photo unavailable</text></svg>',
+  );
+
 function PetPhotoCard({ pet }: { pet: CatPetPhotoRow }) {
   const [index, setIndex] = useState(0);
+  const [broken, setBroken] = useState<Record<number, true>>({});
   const photos = pet.photos;
   const current = photos[index];
 
   useEffect(() => {
     setIndex(0);
+    setBroken({});
   }, [pet.id]);
 
   if (!current) return null;
 
   const hasMany = photos.length > 1;
+  const src =
+    broken[index] === true
+      ? PLACEHOLDER_SRC
+      : photoDisplayUrl(current);
 
   return (
     <article className="pet-photo-card">
       <div className="pet-photo-carousel">
         <img
-          src={current.imagePath}
+          key={`${pet.id}-${index}-${src}`}
+          src={src}
           alt={`${pet.name}, ${pet.breedLabel}`}
           loading="lazy"
           decoding="async"
           className="pet-photo-carousel-img"
+          onError={() => {
+            setBroken((prev) =>
+              prev[index] === true ? prev : { ...prev, [index]: true },
+            );
+          }}
         />
         {hasMany && (
           <>
@@ -63,10 +82,7 @@ function PetPhotoCard({ pet }: { pet: CatPetPhotoRow }) {
             </button>
             <div className="carousel-dots" aria-hidden>
               {photos.map((_, i) => (
-                <span
-                  key={i}
-                  className={i === index ? "dot active" : "dot"}
-                />
+                <span key={i} className={i === index ? "dot active" : "dot"} />
               ))}
             </div>
             <span className="carousel-count">
@@ -78,9 +94,7 @@ function PetPhotoCard({ pet }: { pet: CatPetPhotoRow }) {
       <div className="pet-photo-card-body">
         <div className="pet-photo-card-title">
           <span
-            className={
-              pet.name === "Unknown" ? "name name-unknown" : "name"
-            }
+            className={pet.name === "Unknown" ? "name name-unknown" : "name"}
           >
             {pet.name}
           </span>
@@ -90,9 +104,7 @@ function PetPhotoCard({ pet }: { pet: CatPetPhotoRow }) {
         </div>
         <p className="pet-photo-breed">{pet.breedLabel}</p>
         {pet.catBreed && (
-          <p className="slug">
-            {COMMONALITY_LABELS[pet.catBreed.commonality]}
-          </p>
+          <p className="slug">{COMMONALITY_LABELS[pet.catBreed.commonality]}</p>
         )}
         <p className="pet-photo-owner">
           {pet.owner.firstName} {pet.owner.lastName}
@@ -142,7 +154,16 @@ export function CatPhotoExplorer() {
       breed: sortingByBreed && breedSlug ? breedSlug : undefined,
       search: search || undefined,
     }),
-    [page, sort, order, reportStatus, stateCode, breedSlug, sortingByBreed, search],
+    [
+      page,
+      sort,
+      order,
+      reportStatus,
+      stateCode,
+      breedSlug,
+      sortingByBreed,
+      search,
+    ],
   );
 
   const load = useCallback(async () => {
@@ -195,7 +216,7 @@ export function CatPhotoExplorer() {
       <div className="stat-row">
         <div className="stat-pill stat-pill-inline">
           <span className="stat-value">
-            {loading ? "…" : stats?.catsWithPhotos.toLocaleString() ?? 0}
+            {loading ? "…" : (stats?.catsWithPhotos.toLocaleString() ?? 0)}
           </span>
           <span className="stat-label">cats with photos</span>
         </div>
@@ -204,7 +225,10 @@ export function CatPhotoExplorer() {
             <span className="stat-label">Photos per cat</span>
             <span className="stat-hint">
               {stats.byPhotoCount
-                .map((r) => `${r.photos} photo${r.photos === 1 ? "" : "s"}: ${r.cats}`)
+                .map(
+                  (r) =>
+                    `${r.photos} photo${r.photos === 1 ? "" : "s"}: ${r.cats}`,
+                )
                 .join(" · ")}
             </span>
           </div>
@@ -213,7 +237,8 @@ export function CatPhotoExplorer() {
 
       {stats && stats.catsWithPhotos === 0 && !loading && (
         <p className="hint hint-info">
-          Add <code className="mono">PIXABAY_KEY</code> to <code className="mono">.env</code>
+          Add <code className="mono">PIXABAY_KEY</code> to{" "}
+          <code className="mono">.env</code>
           Run <code className="mono">npm run dataset:cat:fetch</code>, then{" "}
           <code className="mono">npm run dataset:cat:process</code> and{" "}
           <code className="mono">npm run dataset:cat:seed</code>.
@@ -264,7 +289,9 @@ export function CatPhotoExplorer() {
           <span>Sort by</span>
           <select
             value={sort}
-            onChange={(e) => setSort(e.target.value as CatPetPhotoQuery["sort"])}
+            onChange={(e) =>
+              setSort(e.target.value as CatPetPhotoQuery["sort"])
+            }
           >
             <option value="name">Pet name</option>
             <option value="breedLabel">Breed</option>
@@ -278,7 +305,9 @@ export function CatPhotoExplorer() {
           <span>Order</span>
           <select
             value={order}
-            onChange={(e) => setOrder(e.target.value as CatPetPhotoQuery["order"])}
+            onChange={(e) =>
+              setOrder(e.target.value as CatPetPhotoQuery["order"])
+            }
           >
             <option value="asc">A → Z</option>
             <option value="desc">Z → A</option>

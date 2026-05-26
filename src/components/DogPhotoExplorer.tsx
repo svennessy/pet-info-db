@@ -9,6 +9,7 @@ import {
   type DogPetPhotoRow,
   type PetReportStatus,
 } from "../api";
+import { photoDisplayUrl } from "../lib/resolveAssetUrl";
 import { BreedFilterSelect } from "./BreedFilterSelect";
 
 const PAGE_SIZE = 24;
@@ -35,7 +36,7 @@ function PetPhotoCard({ pet }: { pet: DogPetPhotoRow }) {
     <article className="pet-photo-card">
       <div className="pet-photo-carousel">
         <img
-          src={current.imagePath}
+          src={photoDisplayUrl(current)}
           alt={`${pet.name}, ${pet.breedLabel}`}
           loading="lazy"
           decoding="async"

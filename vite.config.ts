@@ -1,6 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import sirv from "sirv";
 
@@ -36,34 +36,69 @@ function mixedBreedDogsStatic(): Plugin {
   };
 }
 
-const oxfordCatsRoot = path.join(projectRoot, "data/oxford-cats");
+const candidCatsRoot = path.join(projectRoot, "data/candid-cats");
+const otherPetPhotosRoot = path.join(projectRoot, "data/other-pet-photos");
 
-/** Serve Oxford-IIIT cat images in dev/preview. */
-function oxfordCatsStatic(): Plugin {
-  const handler = sirv(oxfordCatsRoot, { dev: true, etag: true });
+/** Serve candid cat images in dev/preview (same paths as Supabase: /candid-cats/images/…). */
+function candidCatsStatic(): Plugin {
+  const handler = sirv(candidCatsRoot, { dev: true, etag: true });
   return {
-    name: "oxford-cats-static",
+    name: "candid-cats-static",
     configureServer(server) {
-      server.middlewares.use("/oxford-cats", handler);
+      server.middlewares.use("/candid-cats", handler);
     },
     configurePreviewServer(server) {
-      server.middlewares.use("/oxford-cats", handler);
+      server.middlewares.use("/candid-cats", handler);
     },
   };
 }
 
-export default defineConfig({
-  plugins: [react(), stanfordDogsStatic(), mixedBreedDogsStatic(), oxfordCatsStatic()],
-  server: {
-    port: 5173,
-    fs: {
-      allow: [projectRoot],
+/** Serve other-pet Pixabay images in dev/preview. */
+function otherPetPhotosStatic(): Plugin {
+  const handler = sirv(otherPetPhotosRoot, { dev: true, etag: true });
+  return {
+    name: "other-pet-photos-static",
+    configureServer(server) {
+      server.middlewares.use("/other-pet-photos", handler);
     },
-    proxy: {
-      "/api": {
-        target: "http://localhost:3002",
-        changeOrigin: true,
+    configurePreviewServer(server) {
+      server.middlewares.use("/other-pet-photos", handler);
+    },
+  };
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, projectRoot, "");
+  const assetBase =
+    env.VITE_PUBLIC_ASSET_BASE_URL?.replace(/\/$/, "") ||
+    env.PUBLIC_ASSET_BASE_URL?.replace(/\/$/, "") ||
+    "";
+
+  return {
+    plugins: [
+      react(),
+      stanfordDogsStatic(),
+      mixedBreedDogsStatic(),
+      candidCatsStatic(),
+      otherPetPhotosStatic(),
+    ],
+    define: assetBase
+      ? {
+          "import.meta.env.VITE_PUBLIC_ASSET_BASE_URL":
+            JSON.stringify(assetBase),
+        }
+      : undefined,
+    server: {
+      port: 5173,
+      fs: {
+        allow: [projectRoot],
+      },
+      proxy: {
+        "/api": {
+          target: "http://localhost:3002",
+          changeOrigin: true,
+        },
       },
     },
-  },
+  };
 });

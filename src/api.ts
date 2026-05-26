@@ -1,10 +1,66 @@
 import type { BreedCommonality } from "./data/breedCommonality";
 
 /** Set VITE_API_URL=http://localhost:3002 if the Vite proxy is unavailable. */
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(
-  /\/$/,
-  "",
-) ?? "";
+const API_BASE =
+  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
+  "";
+
+type ApiEnvelope<T> = {
+  success: boolean;
+  data: T;
+};
+
+function isApiEnvelope<T>(value: unknown): value is ApiEnvelope<T> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "success" in value &&
+    "data" in value
+  );
+}
+
+async function apiFetch<T>(path: string): Promise<T> {
+  const url = `${API_BASE}${path}`;
+
+  let response: Response;
+
+  try {
+    response = await fetch(url);
+  } catch {
+    throw new Error(
+      `Cannot reach API at ${url || path}. Run npm run dev and open the Vite URL (not a static file).`,
+    );
+  }
+
+  const json = (await response.json().catch(() => null)) as unknown;
+
+  if (!response.ok) {
+    const message =
+      json && typeof json === "object" && "error" in json
+        ? String(json.error)
+        : `Request failed (${response.status})`;
+
+    throw new Error(message);
+  }
+
+  if (isApiEnvelope<T>(json)) {
+    return json.data;
+  }
+
+  return json as T;
+}
+
+function buildParams(entries: Record<string, string | number | undefined>) {
+  const params = new URLSearchParams();
+
+  Object.entries(entries).forEach(([key, value]) => {
+    if (value !== undefined && value !== "") {
+      params.set(key, String(value));
+    }
+  });
+
+  return params;
+}
 
 export type Species = "dog" | "cat";
 
@@ -34,42 +90,13 @@ export type BreedQuery = {
   search?: string;
 };
 
-async function apiFetch(path: string): Promise<Response> {
-  const url = `${API_BASE}${path}`;
-  try {
-    return await fetch(url);
-  } catch {
-    throw new Error(
-      `Cannot reach API at ${url || path}. Run npm run dev and open the Vite URL (not a static file).`,
-    );
-  }
-}
-
 export async function fetchBreeds(query: BreedQuery): Promise<BreedRow[]> {
-  const params = new URLSearchParams();
-  params.set("species", query.species);
-  if (query.sort) params.set("sort", query.sort);
-  if (query.order) params.set("order", query.order);
-  if (query.commonality) params.set("commonality", query.commonality);
-  if (query.group) params.set("group", query.group);
-  if (query.search) params.set("search", query.search);
-
-  const response = await apiFetch(`/api/breeds?${params}`);
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    throw new Error(
-      `Failed to load breeds (${response.status})${body ? `: ${body.slice(0, 120)}` : ""}`,
-    );
-  }
-  return response.json() as Promise<BreedRow[]>;
+  const params = buildParams(query);
+  return apiFetch<BreedRow[]>(`/api/breeds?${params}`);
 }
 
 export async function fetchStats(species: Species): Promise<BreedStats> {
-  const response = await apiFetch(`/api/stats?species=${species}`);
-  if (!response.ok) {
-    throw new Error(`Failed to load stats (${response.status})`);
-  }
-  return response.json() as Promise<BreedStats>;
+  return apiFetch<BreedStats>(`/api/stats?species=${species}`);
 }
 
 export type CityRow = {
@@ -93,35 +120,29 @@ export type CityStats = {
 };
 
 export type CityQuery = {
-  sort?: "name" | "population" | "stateCode" | "rankInState" | "latitude" | "longitude";
+  sort?:
+    | "name"
+    | "population"
+    | "stateCode"
+    | "rankInState"
+    | "latitude"
+    | "longitude";
   order?: "asc" | "desc";
   state?: string;
   search?: string;
 };
 
 export async function fetchCities(query: CityQuery): Promise<CityRow[]> {
-  const params = new URLSearchParams();
-  if (query.sort) params.set("sort", query.sort);
-  if (query.order) params.set("order", query.order);
-  if (query.state) params.set("state", query.state);
-  if (query.search) params.set("search", query.search);
-
-  const response = await apiFetch(`/api/cities?${params}`);
-  if (!response.ok) {
-    throw new Error(`Failed to load cities (${response.status})`);
-  }
-  return response.json() as Promise<CityRow[]>;
+  const params = buildParams(query);
+  return apiFetch<CityRow[]>(`/api/cities?${params}`);
 }
 
 export async function fetchCityStats(): Promise<CityStats> {
-  const response = await apiFetch("/api/cities/stats");
-  if (!response.ok) {
-    throw new Error(`Failed to load city stats (${response.status})`);
-  }
-  return response.json() as Promise<CityStats>;
+  return apiFetch<CityStats>("/api/cities/stats");
 }
 
 export type PetReportStatus = "lost" | "found";
+export type PetSpeciesFilter = "dog" | "cat" | "other";
 
 export type UserPetSummary = {
   id: number;
@@ -191,31 +212,13 @@ export type UserQuery = {
 };
 
 export async function fetchUsers(query: UserQuery): Promise<UserListResult> {
-  const params = new URLSearchParams();
-  if (query.page) params.set("page", String(query.page));
-  if (query.limit) params.set("limit", String(query.limit));
-  if (query.sort) params.set("sort", query.sort);
-  if (query.order) params.set("order", query.order);
-  if (query.state) params.set("state", query.state);
-  if (query.cityId) params.set("cityId", query.cityId);
-  if (query.search) params.set("search", query.search);
-
-  const response = await apiFetch(`/api/users?${params}`);
-  if (!response.ok) {
-    throw new Error(`Failed to load users (${response.status})`);
-  }
-  return response.json() as Promise<UserListResult>;
+  const params = buildParams(query);
+  return apiFetch<UserListResult>(`/api/users?${params}`);
 }
 
 export async function fetchUserStats(): Promise<UserStats> {
-  const response = await apiFetch("/api/users/stats");
-  if (!response.ok) {
-    throw new Error(`Failed to load user stats (${response.status})`);
-  }
-  return response.json() as Promise<UserStats>;
+  return apiFetch<UserStats>("/api/users/stats");
 }
-
-export type PetSpeciesFilter = "dog" | "cat" | "other";
 
 export type PetBreedRef = {
   slug: string;
@@ -225,15 +228,17 @@ export type PetBreedRef = {
 };
 
 export type PetRow = {
-  id: number;
+  id: number | string;
   name: string;
   species: PetSpeciesFilter;
   reportStatus: PetReportStatus;
+  reportType?: PetReportStatus;
   breedLabel: string;
-  dogBreedSlug: string | null;
-  catBreedSlug: string | null;
+  breed?: string;
+  dogBreedSlug?: string | null;
+  catBreedSlug?: string | null;
   otherKind: string | null;
-  ownerId: number;
+  ownerId?: number;
   latitude: number;
   longitude: number;
   dogBreed: PetBreedRef | null;
@@ -296,37 +301,23 @@ export type PetQuery = {
 };
 
 export async function fetchPets(query: PetQuery): Promise<PetListResult> {
-  const params = new URLSearchParams();
-  if (query.page) params.set("page", String(query.page));
-  if (query.limit) params.set("limit", String(query.limit));
-  if (query.sort) params.set("sort", query.sort);
-  if (query.order) params.set("order", query.order);
-  if (query.species) params.set("species", query.species);
-  if (query.reportStatus) params.set("reportStatus", query.reportStatus);
-  if (query.state) params.set("state", query.state);
-  if (query.breed) params.set("breed", query.breed);
-  if (query.search) params.set("search", query.search);
-
-  const response = await apiFetch(`/api/pets?${params}`);
-  if (!response.ok) {
-    throw new Error(`Failed to load pets (${response.status})`);
-  }
-  return response.json() as Promise<PetListResult>;
+  const params = buildParams(query);
+  return apiFetch<PetListResult>(`/api/pets?${params}`);
 }
 
 export async function fetchPetStats(): Promise<PetStats> {
-  const response = await apiFetch("/api/pets/stats");
-  if (!response.ok) {
-    throw new Error(`Failed to load pet stats (${response.status})`);
-  }
-  return response.json() as Promise<PetStats>;
+  return apiFetch<PetStats>("/api/pets/stats");
 }
 
 export type PetPhotoRow = {
   id: number;
+  petId?: number;
   imagePath: string;
+  imageUrl?: string;
+  resolvedUrl?: string;
   sortOrder: number;
   stanfordInstanceKey: string;
+  createdAt?: string;
 };
 
 export type DogPetPhotoRow = PetRow & {
@@ -362,29 +353,12 @@ export type DogPetPhotoQuery = {
 export async function fetchDogPetPhotos(
   query: DogPetPhotoQuery,
 ): Promise<DogPetPhotoListResult> {
-  const params = new URLSearchParams();
-  if (query.page) params.set("page", String(query.page));
-  if (query.limit) params.set("limit", String(query.limit));
-  if (query.sort) params.set("sort", query.sort);
-  if (query.order) params.set("order", query.order);
-  if (query.reportStatus) params.set("reportStatus", query.reportStatus);
-  if (query.state) params.set("state", query.state);
-  if (query.breed) params.set("breed", query.breed);
-  if (query.search) params.set("search", query.search);
-
-  const response = await apiFetch(`/api/dog-pet-photos?${params}`);
-  if (!response.ok) {
-    throw new Error(`Failed to load dog photos (${response.status})`);
-  }
-  return response.json() as Promise<DogPetPhotoListResult>;
+  const params = buildParams(query);
+  return apiFetch<DogPetPhotoListResult>(`/api/dog-pet-photos?${params}`);
 }
 
 export async function fetchDogPetPhotoStats(): Promise<DogPetPhotoStats> {
-  const response = await apiFetch("/api/dog-pet-photos/stats");
-  if (!response.ok) {
-    throw new Error(`Failed to load dog photo stats (${response.status})`);
-  }
-  return response.json() as Promise<DogPetPhotoStats>;
+  return apiFetch<DogPetPhotoStats>("/api/dog-pet-photos/stats");
 }
 
 export type CatPetPhotoRow = PetRow & {
@@ -411,29 +385,12 @@ export type CatPetPhotoQuery = DogPetPhotoQuery;
 export async function fetchCatPetPhotos(
   query: CatPetPhotoQuery,
 ): Promise<CatPetPhotoListResult> {
-  const params = new URLSearchParams();
-  if (query.page) params.set("page", String(query.page));
-  if (query.limit) params.set("limit", String(query.limit));
-  if (query.sort) params.set("sort", query.sort);
-  if (query.order) params.set("order", query.order);
-  if (query.reportStatus) params.set("reportStatus", query.reportStatus);
-  if (query.state) params.set("state", query.state);
-  if (query.breed) params.set("breed", query.breed);
-  if (query.search) params.set("search", query.search);
-
-  const response = await apiFetch(`/api/cat-pet-photos?${params}`);
-  if (!response.ok) {
-    throw new Error(`Failed to load cat photos (${response.status})`);
-  }
-  return response.json() as Promise<CatPetPhotoListResult>;
+  const params = buildParams(query);
+  return apiFetch<CatPetPhotoListResult>(`/api/cat-pet-photos?${params}`);
 }
 
 export async function fetchCatPetPhotoStats(): Promise<CatPetPhotoStats> {
-  const response = await apiFetch("/api/cat-pet-photos/stats");
-  if (!response.ok) {
-    throw new Error(`Failed to load cat photo stats (${response.status})`);
-  }
-  return response.json() as Promise<CatPetPhotoStats>;
+  return apiFetch<CatPetPhotoStats>("/api/cat-pet-photos/stats");
 }
 
 export type OtherPetPhotoRow = PetRow & {
@@ -470,27 +427,10 @@ export type OtherPetPhotoQuery = {
 export async function fetchOtherPetPhotos(
   query: OtherPetPhotoQuery,
 ): Promise<OtherPetPhotoListResult> {
-  const params = new URLSearchParams();
-  if (query.page) params.set("page", String(query.page));
-  if (query.limit) params.set("limit", String(query.limit));
-  if (query.sort) params.set("sort", query.sort);
-  if (query.order) params.set("order", query.order);
-  if (query.reportStatus) params.set("reportStatus", query.reportStatus);
-  if (query.state) params.set("state", query.state);
-  if (query.kind) params.set("kind", query.kind);
-  if (query.search) params.set("search", query.search);
-
-  const response = await apiFetch(`/api/other-pet-photos?${params}`);
-  if (!response.ok) {
-    throw new Error(`Failed to load bird & bunny photos (${response.status})`);
-  }
-  return response.json() as Promise<OtherPetPhotoListResult>;
+  const params = buildParams(query);
+  return apiFetch<OtherPetPhotoListResult>(`/api/other-pet-photos?${params}`);
 }
 
 export async function fetchOtherPetPhotoStats(): Promise<OtherPetPhotoStats> {
-  const response = await apiFetch("/api/other-pet-photos/stats");
-  if (!response.ok) {
-    throw new Error(`Failed to load bird & bunny photo stats (${response.status})`);
-  }
-  return response.json() as Promise<OtherPetPhotoStats>;
+  return apiFetch<OtherPetPhotoStats>("/api/other-pet-photos/stats");
 }

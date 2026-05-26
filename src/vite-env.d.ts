@@ -2,6 +2,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_API_URL?: string;
+  readonly VITE_PUBLIC_ASSET_BASE_URL?: string;
 }
 
 interface ImportMeta {

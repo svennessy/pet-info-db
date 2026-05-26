@@ -21,9 +21,13 @@ export function mapPetPhotosResolved<
 >(pet: T): T {
   return {
     ...pet,
-    photos: pet.photos.map((photo) => ({
-      ...photo,
-      imagePath: resolveImageUrl(photo.imagePath),
-    })),
+    photos: pet.photos.map((photo) => {
+      const resolvedUrl = resolveImageUrl(photo.imagePath);
+      return {
+        ...photo,
+        imagePath: resolvedUrl,
+        resolvedUrl,
+      };
+    }),
   };
 }

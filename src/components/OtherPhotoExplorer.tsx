@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { OTHER_PET_PHOTO_KINDS } from "../data/otherPetPhotoKinds";
+import { photoDisplayUrl } from "../lib/resolveAssetUrl";
 import {
   fetchOtherPetPhotos,
   fetchOtherPetPhotoStats,
@@ -33,7 +34,7 @@ function PetPhotoCard({ pet }: { pet: OtherPetPhotoRow }) {
     <article className="pet-photo-card">
       <div className="pet-photo-carousel">
         <img
-          src={current.imagePath}
+          src={photoDisplayUrl(current)}
           alt={`${pet.name}, ${pet.breedLabel}`}
           loading="lazy"
           decoding="async"
