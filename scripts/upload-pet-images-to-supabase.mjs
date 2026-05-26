@@ -37,7 +37,8 @@ if (!supabaseUrl || !serviceKey) {
 const DATASETS = [
   { localDir: "data/stanford-dogs", urlPrefix: "stanford-dogs" },
   { localDir: "data/mixed-breed-dogs", urlPrefix: "mixed-breed-dogs" },
-  { localDir: "data/oxford-cats", urlPrefix: "oxford-cats" },
+  { localDir: "data/candid-cats", urlPrefix: "candid-cats" },
+  { localDir: "data/other-pet-photos", urlPrefix: "other-pet-photos" },
 ];
 
 const IMAGE_EXT = new Set([
@@ -137,7 +138,9 @@ async function main() {
 
   const jobs = await collectUploads();
   if (jobs.length === 0) {
-    console.error("No images found under data/stanford-dogs, mixed-breed-dogs, or oxford-cats.");
+    console.error(
+      "No images found. Run assets:download:pixabay for cats/other, or check data/ folders.",
+    );
     process.exit(1);
   }
 

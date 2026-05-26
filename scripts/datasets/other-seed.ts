@@ -10,7 +10,7 @@ import {
 } from "../../src/data/otherPetPhotoKinds.js";
 import { buildShuffledCountQueue } from "../../src/data/allocateBreedPhotos.js";
 import { createRng } from "../../src/data/userGenerator.js";
-import { PET_PHOTO_COUNT_WEIGHTS } from "../../src/data/oxfordCatInstances.js";
+import { PET_PHOTO_COUNT_WEIGHTS } from "../../src/data/stanfordDogInstances.js";
 import { prisma } from "../../prisma/db.js";
 
 const SEED = 46;

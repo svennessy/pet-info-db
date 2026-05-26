@@ -3,18 +3,16 @@ dist
 .env
 *.log
 .DS_Store
-data/stanford-dogs/
-data/stanford-dogs/dataset.json
-data/mixed-breed-dogs/images/
-data/mixed-breed-dogs/manifest.json
-data/mixed-breed-dogs/dataset.json
-src/data/stanfordDogsIndex.json
-src/data/mixedBreedDogsIndex.json
-data/oxford-cats/
-src/data/oxfordCatsIndex.json
-data/candid-cats/
-data/candid-cats/dataset.json
-src/data/candidCatsIndex.json
-data/other-pet-photos/
-data/other-pet-photos/dataset.json
-src/data/otherPetPhotosIndex.json
+
+# Editor / OS noise
+.vscode/
+Thumbs.db
+
+# Local datasets & generated indexes (Supabase is source of truth)
+data/
+src/data/*Index.json
+
+# Prisma generated client output (built via `prisma generate`)
+generated/
+src/generated/
+**/query_engine-windows.dll.node.tmp*

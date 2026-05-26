@@ -11,7 +11,7 @@ import type {
   BreedCommonality,
   BreedGroup,
   CatBreedGroup,
-} from "../src/generated/prisma/client.js";
+} from "../generated/prisma/client.js";
 
 const BATCH = 50;
 const __dirname = dirname(fileURLToPath(import.meta.url));

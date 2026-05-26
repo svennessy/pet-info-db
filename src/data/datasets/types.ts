@@ -4,7 +4,6 @@ export type ImageSource =
   | "pixabay"
   | "wikimedia"
   | "stanford"
-  | "oxford"
   | "openverse"
   | "pexels"
   | "flickr"
