@@ -1,6 +1,11 @@
 /**
  * Layer 3 — Seed: assign processed cat photos to pets in the database.
  */
+
+// takes: cat pets already in db
+// processed cat photo dataset
+// creates petPhoto records 
+
 import { readFileSync } from "node:fs";
 import {
   CANDID_CAT_BREED_PROXIES,
@@ -30,6 +35,7 @@ type CarouselSlide = {
   instanceKey: string;
 };
 
+// used to pick how many photos to assign to each pet
 const PHOTO_COUNT_OPTIONS = PET_PHOTO_COUNT_WEIGHTS.map((row) => ({
   value: row.count,
   weight: row.weight,
@@ -57,6 +63,7 @@ function resolveBreedPool(
     petBreedSlug,
     ...(CANDID_CAT_BREED_PROXIES[petBreedSlug] ?? []),
   ];
+  // meaning if not enough longhair photos, use domestic-medium photos as fallback instead of bengal
   if (DOMESTIC_CAT_SLUGS.has(petBreedSlug)) {
     trySlugs.push(CANDID_CAT_FALLBACK_SLUG);
   }
@@ -77,6 +84,8 @@ function resolveBreedPool(
  * Build a carousel from instances that match the pet's breed type only.
  * May use multiple instances of the same breed when one batch has fewer than `want` photos.
  */
+// input: breed pool, desired photo count, used instance tracker
+// output: carousel slides
 function collectBreedMatchedCarousel(
   pool: PhotoInstance[],
   want: number,
@@ -130,6 +139,7 @@ export async function seedCatPetPhotos() {
     instancesByBreed.set(inst.breedSlug, list);
   }
 
+  // get all cat pets from db with breed slug
   const pets = await prisma.pet.findMany({
     where: { species: "cat", catBreedSlug: { not: null } },
     select: { id: true, catBreedSlug: true },
@@ -141,6 +151,8 @@ export async function seedCatPetPhotos() {
   }
 
   console.log(`Assigning candid cat photos to ${pets.length} cats…`);
+  // delete all existing cat photos
+  // generates fresh on reseed
   await prisma.petPhoto.deleteMany({
     where: { pet: { species: "cat" } },
   });
@@ -151,6 +163,7 @@ export async function seedCatPetPhotos() {
     pets.length,
     rng,
   );
+  // used to track which photos have already been used to avoid duplicates
   const usedInstances = new Set<string>();
   const batch: Array<{
     petId: number;
@@ -163,13 +176,16 @@ export async function seedCatPetPhotos() {
 
   for (const [petIndex, pet] of pets.entries()) {
     const slug = pet.catBreedSlug!;
+    // find breed pool
     const pool = resolveBreedPool(slug, instancesByBreed);
     if (pool.length === 0) {
       skippedNoPool++;
       continue;
     }
 
+    // choose photo count
     const want = pickPhotoCount(photoCountQueue, petIndex);
+    // build carousel
     const slides = collectBreedMatchedCarousel(
       pool,
       want,
@@ -178,6 +194,8 @@ export async function seedCatPetPhotos() {
     );
 
     slides.forEach((slide, sortOrder) => {
+      // create db rows
+      // ie: { petId: 1, imagePath: "/candid-cats/images/1.jpg", sortOrder: 0, stanfordInstanceKey: "pixabay:1234567890" }
       batch.push({
         petId: pet.id,
         imagePath: slide.imagePath,
@@ -235,3 +253,13 @@ main()
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());
+
+
+// flow breakdown:
+// pet generation
+// breed distribution
+// location distribution
+// photo count distribution
+// breed matched carousels
+// instance reuse control
+// db seeding

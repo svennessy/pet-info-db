@@ -1,29 +1,45 @@
+// describes what the service got back from prisma
+// converts id because DB uses number but frontend uses string
 type MapPetInput = {
   id: number | string;
   name: string;
+  description: string | null;
   species: "dog" | "cat" | "other";
   reportStatus: "lost" | "found";
   breedLabel: string;
   latitude: number;
   longitude: number;
+  cityName: string | null;
+  stateCode: string | null;
+  locationLabel: string | null;
 };
 
+// reportType is for frontend display
+// reportStatus is for backend standardization
+// same story with breedLabel vs breed
+// frontend expects something like PetMarker with color and description
+// but db doesn't have them so they're blank to keep API stable
+// map marker payload is smaller to keep map faster
 export function toMapPet(pet: MapPetInput) {
   return {
     id: String(pet.id),
     name: pet.name,
+    description: pet.description ?? "",
     species: pet.species,
     reportType: pet.reportStatus,
     reportStatus: pet.reportStatus,
     breed: pet.breedLabel,
     breedLabel: pet.breedLabel,
     color: "",
-    description: "",
     latitude: pet.latitude,
     longitude: pet.longitude,
+    cityName: pet.cityName,
+    stateCode: pet.stateCode,
+    locationLabel: pet.locationLabel,
   };
 }
 
+// extends MapPetInput to add frontend specific fields
 type PetListInput = MapPetInput & {
   otherKind: string | null;
   dogBreed?: {
@@ -50,6 +66,10 @@ type PetListInput = MapPetInput & {
   };
 };
 
+// api response for GET /api/pets route
+// keeps owner, dogBreed, catBreed, which come from include: {} in prisma query
+// flow becomes: prisma -> transformer -> frontend DTO (data transfer object)
+// DTO is the exact shape sent over the network
 export function toPetListItem(pet: PetListInput) {
   return {
     id: String(pet.id),
@@ -62,6 +82,9 @@ export function toPetListItem(pet: PetListInput) {
     otherKind: pet.otherKind,
     latitude: pet.latitude,
     longitude: pet.longitude,
+    cityName: pet.cityName,
+    stateCode: pet.stateCode,
+    locationLabel: pet.locationLabel,
     dogBreed: pet.dogBreed,
     catBreed: pet.catBreed,
     owner: pet.owner,

@@ -14,16 +14,21 @@
 import "dotenv/config";
 import { createClient } from "@supabase/supabase-js";
 import { readFile, readdir } from "node:fs/promises";
-import { join, relative, extname } from "node:path";
+import { dirname, join, relative, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ROOT = join(fileURLToPath(import.meta.url), "../..");
+const SCRIPTS_DIR = dirname(fileURLToPath(import.meta.url));
+const ROOT = join(SCRIPTS_DIR, "..");
 const BUCKET = process.env.SUPABASE_STORAGE_BUCKET ?? "pet-assets";
 const CONCURRENCY = Number(process.env.UPLOAD_CONCURRENCY) || 8;
 
+// finds supabase project url
 const supabaseUrl =
   process.env.SUPABASE_URL ??
   process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+
+
+// private admin key used to upload files
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
 if (!supabaseUrl || !serviceKey) {
@@ -34,6 +39,8 @@ if (!supabaseUrl || !serviceKey) {
 }
 
 /** Local data dir → URL prefix stored in pet_photos.imagePath */
+// local: data/candid-cats/images/domestic-shorthair-00001.jpg
+// supabase: candid-cats/domestic-shorthair-00001.jpg
 const DATASETS = [
   { localDir: "data/stanford-dogs", urlPrefix: "stanford-dogs" },
   { localDir: "data/mixed-breed-dogs", urlPrefix: "mixed-breed-dogs" },
@@ -50,6 +57,8 @@ const IMAGE_EXT = new Set([
   ".bmp",
 ]);
 
+// determines the content type of the file based on the file extension
+// images can still upload without but browser might not serve optimally
 function contentTypeFor(filePath) {
   const ext = extname(filePath).toLowerCase();
   if (ext === ".png") return "image/png";
@@ -58,6 +67,11 @@ function contentTypeFor(filePath) {
   return "image/jpeg";
 }
 
+// recursive file walker
+// ie. data/candid-cats/
+//   images/
+//     domestic-shorthair/
+//       cat-00001.jpg
 async function* walkFiles(dir) {
   let entries;
   try {
@@ -75,6 +89,12 @@ async function* walkFiles(dir) {
   }
 }
 
+// collects all the images to upload
+// example:
+//   abs: data/candid-cats
+//   file: data/candid-cats/images/domestic-shorthair-00001.jpg
+//   rel: images/domestic-shorthair-00001.jpg
+//   storagePath: candid-cats/images/domestic-shorthair-00001.jpg
 async function collectUploads() {
   const jobs = [];
   for (const { localDir, urlPrefix } of DATASETS) {
@@ -88,14 +108,18 @@ async function collectUploads() {
   return jobs;
 }
 
+// creates a supabase admin client
 const supabase = createClient(supabaseUrl, serviceKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
 async function uploadOne({ filePath, storagePath }) {
+  // reads the local file
   const body = await readFile(filePath);
+  // uploads the file to supabase storage
   const { error } = await supabase.storage.from(BUCKET).upload(storagePath, body, {
     contentType: contentTypeFor(filePath),
+    // means if the file already exists, it will be overwritten
     upsert: true,
   });
   if (error) {
@@ -103,6 +127,7 @@ async function uploadOne({ filePath, storagePath }) {
   }
 }
 
+// uploads multiple images at same time
 async function runPool(jobs) {
   let done = 0;
   let failed = 0;
@@ -131,6 +156,10 @@ async function runPool(jobs) {
   return { done, failed };
 }
 
+// logs supabase/bucket
+// scans local image files
+// uploads all jobs
+// prints public base url
 async function main() {
   console.log(`Supabase: ${supabaseUrl}`);
   console.log(`Bucket: ${BUCKET} (public)`);
@@ -157,3 +186,8 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+
+// how frontend loads images:
+// if db contains: /candid-cats/images/domestic-shorthair-00001.jpg
+// and render has: PUBLIC_ASSET_BASE_URL=https://spot.supabase.co/storage/v1/object/public/pet-assets/candid-cats/images/domestic-shorthair-00001.jpg
+// then backend can resolve to: https://spot.supabase.co/storage/v1/object/public/pet-assets/candid-cats/images/domestic-shorthair-00001.jpg

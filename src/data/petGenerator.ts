@@ -26,8 +26,26 @@ export type BreedForAssignment = {
   weight: number;
 };
 
+function generatePetDescription(
+  name: string,
+  species: PetSpeciesKind,
+  breedLabel: string,
+  reportStatus: PetReportStatus,
+): string {
+  if (reportStatus === "lost") {
+    return `${name} is a ${breedLabel} ${species} reported missing by the owner. Last seen near their neighborhood. If spotted, please report the sighting.`;
+  }
+
+  if (name === UNKNOWN_PET_NAME) {
+    return `This ${breedLabel} ${species} was reported found by a community member. The pet's name is currently unknown.`;
+  }
+
+  return `${name} is a ${breedLabel} ${species} that was reported found and is being reunited with its owner.`;
+}
+
 export type GeneratedPet = {
   name: string;
+  description: string | null;
   species: PetSpeciesKind;
   reportStatus: PetReportStatus;
   breedLabel: string;
@@ -72,6 +90,8 @@ function boostBreeds(
   }));
 }
 
+// creates 12,000 dogs, 7,400 cats, and 600 other pets
+// then randomly distributes species
 function buildSpeciesQueue(rng: () => number): PetSpeciesKind[] {
   const queue: PetSpeciesKind[] = [
     ...Array<"dog">(DOG_COUNT).fill("dog"),
@@ -87,6 +107,7 @@ function pickPetName(
   reportStatus: PetReportStatus,
   rng: () => number,
 ): string {
+  // usually found pet names are unknown
   if (reportStatus === "found" && rng() < foundUnknownNameRate(species)) {
     return UNKNOWN_PET_NAME;
   }
@@ -99,6 +120,8 @@ function breedBySlug(
   return new Map(breeds.map((b) => [b.slug, b]));
 }
 
+// how pets end up near owner's city
+// flow is: owner city coords -> petLatLongFromCity() -> small random offset -> pet location
 function coordsForOwner(
   ownerCoords: Map<number, OwnerCityCoords>,
   ownerId: number,
@@ -139,8 +162,11 @@ export function generatePets(
     throw new Error("Dog and cat breed lists are required");
   }
 
+  // random number generator for pet generation
+  // means same seed, same pets, same locations, same names every time
   const rng = createRng(seed);
   const speciesQueue = buildSpeciesQueue(rng);
+  // shuffle owner ids to randomly distribute pets
   const owners = [...ownerIds];
   shuffleInPlace(owners, rng);
 
@@ -160,6 +186,12 @@ export function generatePets(
     const species = speciesQueue[i];
     const reportStatus = pickReportStatus(species, rng);
     const name = pickPetName(species, reportStatus, rng);
+    const description = generatePetDescription(
+      name,
+      species,
+      species === "other" ? "pet" : "",
+      reportStatus,
+    );
     const ownerId = owners[i];
     const { latitude, longitude } = coordsForOwner(
       ownerCoordsById,
@@ -167,10 +199,17 @@ export function generatePets(
       seed,
     );
 
+    // if dog, pick a dog breed (weighted random)
     if (species === "dog") {
       const picked = pickWeighted(weightedDogs, rng);
       pets.push({
         name,
+        description: generatePetDescription(
+          name,
+          species,
+          picked.name,
+          reportStatus,
+        ),
         species,
         reportStatus,
         breedLabel: picked.name,
@@ -182,11 +221,18 @@ export function generatePets(
         longitude,
       });
     } else if (species === "cat") {
+      // pick a cat breed (pre-built shuffled queue)
       const slug = catBreedQueue[catIdx++];
       const picked = catBySlug.get(slug);
       if (!picked) throw new Error(`Unknown cat breed slug: ${slug}`);
       pets.push({
         name,
+        description: generatePetDescription(
+          name,
+          species,
+          picked.name,
+          reportStatus,
+        ),
         species,
         reportStatus,
         breedLabel: picked.name,
@@ -204,6 +250,12 @@ export function generatePets(
       ).name;
       pets.push({
         name,
+        description: generatePetDescription(
+          name,
+          species,
+          kind,
+          reportStatus,
+        ),
         species,
         reportStatus,
         breedLabel: kind,
@@ -219,3 +271,17 @@ export function generatePets(
 
   return pets;
 }
+
+// final generated pet looks like:
+// {
+//   name: "Buddy",
+//   species: "dog",
+//   reportStatus: "lost",
+//   breedLabel: "Golden Retriever",
+//   dogBreedSlug: "golden-retriever",
+//   catBreedSlug: null,
+//   otherKind: null,
+//   ownerId: 1,
+//   latitude: 40.7128,
+//   longitude: -74.0060,
+// }

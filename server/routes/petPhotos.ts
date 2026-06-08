@@ -8,6 +8,8 @@ import { ok } from "../utils/apiResponse.js";
 
 const router = Router();
 
+// flow:
+// /api/dog-pet-photos -> getPhotoPetList(req, "dog") -> service -> db -> json
 router.get(
   "/dog-pet-photos",
   asyncRoute(async (req, res) => {
@@ -15,6 +17,7 @@ router.get(
   }),
 );
 
+// things like total pets, total photos, etc.
 router.get(
   "/dog-pet-photos/stats",
   asyncRoute(async (_req, res) => {
@@ -51,3 +54,12 @@ router.get(
 );
 
 export default router;
+
+// overall flow:
+//   petPhotos.ts
+//   getPhotoPetList(req, species)
+//   validator
+//   query
+//   prisma.petPhoto
+//   transformer
+//   frontend

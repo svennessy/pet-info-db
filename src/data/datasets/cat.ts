@@ -68,6 +68,9 @@ export interface CatLegacyIndex {
   }>;
 }
 
+// divies into buckets of 4 photos per instance
+// ie: 12 photos of domestic shorthair -> 3 instances of CatPhotoInstance
+// ex: domestic-shorthair/0001 (4 photos)
 export const CAT_PHOTOS_PER_INSTANCE = 4;
 export const CAT_DATASET_SOURCE = "pixabay-candid";
 
@@ -116,9 +119,14 @@ function pickKeyword(
   return null;
 }
 
+// converts manifest row to cat image
+// ie: { "id": "...", "imagePath": "...", "breedSlug": "..." }
+// becomes: CatImage object
 export function manifestRowToCatImage(row: CatManifestRow): CatImage {
   return {
     id: row.id,
+    // dataset builder blindly trusts whatever is in json
+    // this caused the initial issue with expired urls
     url: row.imagePath,
     thumbnail: row.sourceUrl !== row.imagePath ? row.sourceUrl : null,
     width: null,
@@ -131,6 +139,9 @@ export function manifestRowToCatImage(row: CatManifestRow): CatImage {
   };
 }
 
+// extracts tags from titles
+// ie: cat, cute, home, indoor
+// becomes: { tags: [...], mood: "cute", environment: "home" }
 export function manifestRowToCatMeta(row: CatManifestRow): CatMeta {
   const tags = parseTagsFromTitle(row.title);
   return {
@@ -165,6 +176,10 @@ export function buildCatDatasetFromManifest(
     for (let i = 0; i < slugRows.length; i += CAT_PHOTOS_PER_INSTANCE) {
       const chunk = slugRows.slice(i, i + CAT_PHOTOS_PER_INSTANCE);
       const bucketNum = Math.floor(i / CAT_PHOTOS_PER_INSTANCE) + 1;
+      // groups photos together
+      // ie: domestic-shorthair/0001 (4 photos)
+      // might contain cat sleeping, cat on couch, cat by window, cat on rug
+      // ideally will all still look like same cat
       const instanceKey = `${slug}/${String(bucketNum).padStart(4, "0")}`;
       byBreed[slug].push(instanceKey);
       instances.push({

@@ -8,6 +8,9 @@ export function jitterLatLong(
 ): { latitude: number; longitude: number } {
   const radiusDeg = 0.04;
   const dLat = (rng() * 2 - 1) * radiusDeg;
+  // earth is a sphere, so we need to adjust for the curvature
+  // ie: at the poles, the radius is smaller, so we need to adjust for that
+  // otherwise northern cities would look compressed
   const cosLat = Math.cos((latitude * Math.PI) / 180);
   const dLng = ((rng() * 2 - 1) * radiusDeg) / Math.max(cosLat, 0.2);
   return {

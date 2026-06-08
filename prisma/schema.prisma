@@ -1,12 +1,19 @@
+// tells prisma generate a ts prisma client
+// put it in generated/prisma 
+// backend imports types/client from something like
+// import { PrismaClient } from "../../generated/prisma/client.js";
+
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
+// with prisma 7 the connection url lives in prisma.config.ts
 datasource db {
   provider = "postgresql"
 }
 
+// see eventual update needed in issues.txt
 model User {
   id        Int    @id @default(autoincrement())
   firstName String
@@ -14,7 +21,7 @@ model User {
   email     String @unique
   phone     String @unique
   cityId    String
-  pet       Pet?
+  pet       Pet[]
   city      City   @relation(fields: [cityId], references: [id])
 
   @@index([cityId])
@@ -22,17 +29,49 @@ model User {
   @@map("users")
 }
 
+model Profile {
+  id         String   @id
+  email      String   @unique
+  firstName  String?
+  lastName   String?
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+// powers map markers, pet cards, photo explorers, stats, filters
+// species PetSpecies allowed values: dog, cat, other
+// breed strategy:
+//   breedLabel: "golden retriever"
+//   dogBreedSlug: "golden-retriever"
+//   catBreedSlug: null
+//   otherKind: null
+// pet relations:
+//   prisma.pet.findMany({
+//     include: {
+//       owner: true,
+//       dogBreed: true,
+//       catBreed: true,
+//       photos: true,
+//     }
+//   })
 model Pet {
   id           Int             @id @default(autoincrement())
   name         String
+  description  String?
   species      PetSpecies
   breedLabel   String
   dogBreedSlug String?
   catBreedSlug String?
   otherKind    String?
-  ownerId      Int             @unique
+  ownerId      Int
   latitude     Float
   longitude    Float
+  locationLabel String?
+  cityName String?
+  stateCode String?
   reportStatus PetReportStatus @default(lost)
   createdAt    DateTime        @default(now())
   photos       PetPhoto[]
@@ -40,6 +79,7 @@ model Pet {
   dogBreed     DogBreed?       @relation(fields: [dogBreedSlug], references: [slug])
   owner        User            @relation(fields: [ownerId], references: [id])
 
+  @@index([ownerId])
   @@index([species])
   @@index([reportStatus])
   @@index([breedLabel])
@@ -55,6 +95,14 @@ model Pet {
   @@map("pets")
 }
 
+// lookup/reference table
+// example:
+//   slug: "golden-retriever"
+//   name: "Golden Retriever"
+//   commonality: "common"
+//   weight: 50
+//   group: "sporting"
+//   pets: [Pet]
 model DogBreed {
   slug        String           @id
   name        String
@@ -69,6 +117,17 @@ model DogBreed {
   @@map("dog_breeds")
 }
 
+// image carousel table, each pet can have many photos
+// imagePath can be:
+//   /stanford-dogs/...
+//   /candid-cats/images/...
+//   https://supabase.co/storage/...
+// @@unique([petId, imagePath]) means each pet can only have one photo with the same imagePath
+// @@index([petId]) means we can quickly find all photos for a pet
+// @@index([petId, sortOrder]) means we can quickly find all photos for a pet in order
+// @@index([stanfordInstanceKey]) means we can quickly find all photos for a pet by stanfordInstanceKey
+// @@index([createdAt]) means we can quickly find all photos for a pet by createdAt
+// @@map("pet_photos") means we can quickly find all photos for a pet by map("pet_photos")
 model PetPhoto {
   id                  Int      @id @default(autoincrement())
   petId               Int
@@ -86,6 +145,14 @@ model PetPhoto {
   @@map("pet_photos")
 }
 
+// lookup/reference table
+// example:
+//   slug: "siamese"
+//   name: "Siamese"
+//   commonality: "common"
+//   weight: 50
+//   group: "oriental"
+//   pets: [Pet]
 model CatBreed {
   slug        String           @id
   name        String
@@ -100,6 +167,8 @@ model CatBreed {
   @@map("cat_breeds")
 }
 
+// assigns cities to realistic locations
+// supports state filters, city filters, population weighted fake data, map distribution
 model City {
   id          String @id
   name        String
@@ -117,6 +186,7 @@ model City {
   @@map("cities")
 }
 
+// fixed allowed values
 enum PetSpecies {
   dog
   cat
@@ -160,3 +230,21 @@ enum CatBreedGroup {
   hybrid
   misc
 }
+
+// eventually change from:
+// User {
+//   pet Pet?
+// }
+// Pet {
+//   ownerId Int @unique
+// }
+// to:
+// User {
+//   pets Pet[]
+// }
+// Pet {
+//   ownerId Int
+//   owner User @relation(fields: [ownerId], references: [id])
+//   @@index([ownerId])
+// }
+// because real users can have multiple reports

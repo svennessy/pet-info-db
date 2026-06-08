@@ -1,3 +1,8 @@
+// quota math engine
+// if 7400 cats needed, how many domestic shorthair?
+// if 1100 cat photos, how many siamese?
+// if pets have 1-4 photos, how many pets get each amount?
+
 export type BreedWeight = {
   slug: string;
   weight: number;
@@ -8,9 +13,19 @@ export type WeightedValue = {
   weight: number;
 };
 
-/**
- * Split `total` across items proportional to weight (largest remainder).
- */
+// example:
+// allocateByWeight(
+//   [
+//     { slug: "domestic-shorthair", weight: 100 }, 
+//     { slug: "siamese", weight: 20 },
+//   ],
+//  120,
+// )
+// returns:
+// {
+//   "domestic-shorthair": 100,
+//   "siamese": 20,
+// }
 export function allocateByWeight(
   items: readonly BreedWeight[],
   total: number,
@@ -47,6 +62,8 @@ export function allocatePhotosByWeight(
   return allocateByWeight(breeds, totalPhotos);
 }
 
+// instead of dog dog dog cat cat other
+// get cat dog other dog cat dog
 export function shuffleInPlace<T>(items: T[], rng: () => number): void {
   for (let i = items.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));

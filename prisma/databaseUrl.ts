@@ -8,3 +8,13 @@ export function getDatabaseUrl(): string {
   }
   return url;
 }
+
+// safely loads URL and rejects if invalid
+// exists to fix common issue:
+// most people use DATABASE_URL= for app queries
+// and DIRECT_URL= for migrate
+// so it tries DATABASE_URL first and falls back to DIRECT_URL
+// example DATABASE_URL:
+// postgres://local-user:password@localhost:5432/pets
+// postgres://render-user:password@aws-host/pets
+// postgres://supabase-user:password@db.supabase.co/postgres

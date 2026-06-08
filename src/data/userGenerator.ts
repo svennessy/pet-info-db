@@ -1,3 +1,9 @@
+// generator flow for increased realism:
+// weighted census data
+// population weighted city picker
+// state aware phone number generator
+// unique email generator
+
 import {
   CENSUS_FIRST_NAMES,
   CENSUS_LAST_NAMES,
@@ -19,6 +25,12 @@ export type GeneratedUser = {
 };
 
 /** Deterministic PRNG for reproducible seeds (mulberry32). */
+// used to ensure same users are generated every time
+// instead of Math.random() uses createRng()
+// so createRng(42) example:
+// run #1: John Smith
+// run #2: John Smith
+// run #3: John Smith
 export function createRng(seed: number) {
   let state = seed >>> 0;
   return () => {
@@ -29,6 +41,9 @@ export function createRng(seed: number) {
   };
 }
 
+// picks a weighted item from a list
+// if Smith = weight 100, Johnson = weight 50, and Washington = weight 5
+// pickWeighted(...) will return Smith much more often
 export function pickWeighted<T extends WeightedName>(
   items: readonly T[],
   rng: () => number,
@@ -106,6 +121,9 @@ function normalizeToken(value: string) {
     .replace(/[^a-z0-9]/g, "");
 }
 
+// instead of NYC and a tiny Nebraska town having equal probability 
+// city.pop is divided by totalPop to get a probability
+// so NYC, LA, Chicago, etc receive far more users
 function buildCityPicker(cities: CityForAssignment[], rng: () => number) {
   const totalPop = cities.reduce((sum, c) => sum + c.population, 0);
   const cumulative: number[] = [];
@@ -119,6 +137,9 @@ function buildCityPicker(cities: CityForAssignment[], rng: () => number) {
     const roll = rng();
     let lo = 0;
     let hi = cumulative.length - 1;
+    // binary seach optimization
+    // instead of check every city 
+    // search narrowed to middle city and then left or right
     while (lo < hi) {
       const mid = Math.floor((lo + hi) / 2);
       if (roll <= cumulative[mid]) hi = mid;
@@ -128,12 +149,19 @@ function buildCityPicker(cities: CityForAssignment[], rng: () => number) {
   };
 }
 
+// creates a unique email for a user
+// ie: john.smith@petdb.mail
+// if john.smith@petdb.mail is already used, add a number
 function makeUniqueEmail(
   first: string,
   last: string,
   seq: number,
   used: Set<string>,
 ): string {
+  // normalizeToken removes accents and special characters
+  // ie: "John" -> "john"
+  // ie: "Smith" -> "smith"
+  // ie: "John Smith" -> "johnsmith"
   const base = `${normalizeToken(first)}.${normalizeToken(last)}`;
   let candidate = `${base}@petdb.mail`;
   if (!used.has(candidate)) {
@@ -158,8 +186,10 @@ function makeUniquePhone(
   stateCode: string,
   seq: number,
   rng: () => number,
+  // ensure no duplicate phones
   used: Set<string>,
 ): string {
+  // ensure area code matches city user is in
   const codes = STATE_AREA_CODES[stateCode] ?? DEFAULT_AREA_CODES;
   for (let attempt = 0; attempt < 50; attempt++) {
     const area = codes[Math.floor(rng() * codes.length)];
@@ -192,12 +222,14 @@ export function generateUsers(
   const phones = new Set<string>();
   const users: GeneratedUser[] = [];
 
+  // loop to create every user
   for (let i = 0; i < count; i++) {
     const firstName = pickWeighted(CENSUS_FIRST_NAMES, rng).name;
     const lastName = pickWeighted(CENSUS_LAST_NAMES, rng).name;
     const cityId = pickCity();
     const stateCode = stateByCityId.get(cityId) ?? "NY";
 
+    // save user to array
     users.push({
       firstName,
       lastName,
@@ -207,5 +239,14 @@ export function generateUsers(
     });
   }
 
-  return users;
+  return users;  
 }
+
+// example generated user:
+// {
+//   firstName: "John",
+//   lastName: "Smith",
+//   email: "john.smith@petdb.mail",
+//   phone: "+14345551234",
+//   cityId: "charlottesville-va
+// }

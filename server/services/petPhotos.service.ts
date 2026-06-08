@@ -1,3 +1,12 @@
+// endpoint that powers the photo gallery/card views
+// flow: /api/cat-pet-photos
+//   getPhotoPetList(req, "cat")
+//   buildPhotoPetWhere(...)
+//   prisma query
+//   include photos
+//   toPhotoPet(...)
+//   frontend
+
 import type { Request } from "express";
 import type { PetReportStatus, Prisma } from "../../generated/prisma/client.js";
 import { prisma } from "../../prisma/db.js";
@@ -53,6 +62,8 @@ function buildPhotoPetWhere(params: {
 
   let where: Prisma.PetWhereInput = {
     species,
+    // only return pets with at least one photo
+    // so if a cat has pet row exists but pet_photos is empty, it won't be returned
     photos: { some: {} },
   };
 
@@ -84,6 +95,11 @@ function buildPhotoPetWhere(params: {
     where.otherKind = kind;
   }
 
+  // if search = kevin, it will search for:
+  // - pets with name containing "kevin"
+  // - pets with breedLabel containing "kevin"
+  // - pets with owner firstName containing "kevin"
+  // - pets with owner lastName containing "kevin"
   if (search) {
     where = {
       AND: [
@@ -103,13 +119,17 @@ function buildPhotoPetWhere(params: {
   return where;
 }
 
+// decides what prisma loads
 function buildPhotoPetInclude(species: PhotoSpecies): Prisma.PetInclude {
   const baseInclude: Prisma.PetInclude = {
+    // for every species "Photo 1, Photo 2, Photo 3"
+    // becomes carousel order
     photos: {
       orderBy: {
         sortOrder: "asc",
       },
     },
+    // owner info for card hover
     owner: {
       select: {
         id: true,
@@ -193,12 +213,32 @@ export async function getPhotoPetList(req: Request, species: PhotoSpecies) {
 
   const orderBy = buildPetOrderBy(sort, order);
 
+  // main query
   const [pets, total] = await Promise.all([
     prisma.pet.findMany({
       where,
       orderBy,
       skip,
       take: limit,
+      // means each pet will come back like:
+      // {
+      //   id,
+      //   name,
+      //   photos: [...],
+      //   owner: {
+      //     id,
+      //     firstName,
+      //     lastName,
+      //     city: {
+      //       name,
+      //       stateCode,
+      //       stateName,
+      //     },
+      //   catBreed: {
+      //     slug,
+      //     name,
+      //   }
+      // }
       include: buildPhotoPetInclude(species),
     }),
     prisma.pet.count({ where }),
@@ -213,6 +253,20 @@ export async function getPhotoPetList(req: Request, species: PhotoSpecies) {
   };
 }
 
+// ananlytics endpoint
+// ie: /api/cat-pet-photos/stats
+// computes total cats with photos, total photos, lost vs found counts, photo count distribution
+// example output:
+// {
+//   photoCount: 100,
+//   byReportStatus: [
+//     { reportStatus: "lost", count: 50 },
+//     { reportStatus: "found", count: 50 },
+//   ],
+//   byPhotoCount: [
+//     { photos: 1, cats: 100 },
+//   ],
+// }
 async function getPhotoPetStatsUncached(species: PhotoSpecies) {
   const where: Prisma.PetWhereInput =
     species === "other"
@@ -342,6 +396,7 @@ async function getPhotoPetStatsUncached(species: PhotoSpecies) {
   };
 }
 
+// stats are cached for 60 seconds to avoid repeated db hits
 export async function getPhotoPetStats(species: PhotoSpecies) {
   return cached(
     `photo-pet-stats:${species}`,

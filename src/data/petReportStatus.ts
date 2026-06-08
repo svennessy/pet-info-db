@@ -25,6 +25,7 @@ export function pickReportStatus(
   species: PetSpeciesKind,
   rng: () => number,
 ): PetReportStatus {
+  // if rng() < lostProbability(species) then lost, otherwise found
   return rng() < lostProbability(species) ? "lost" : "found";
 }
 

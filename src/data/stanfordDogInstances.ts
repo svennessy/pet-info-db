@@ -1,3 +1,8 @@
+// solves problem of:
+// photo 1: golden retriever puppy
+// photo 2: adult golden retriever
+// photo 3: different golden retriever outside
+
 /**
  * Group Stanford Dogs filenames into consistent "same dog" instances.
  * Images live in Images/<class-folder>/<classId>_<imageNum>.jpg
@@ -7,6 +12,7 @@ export function stanfordClassFromFolder(folderName: string): string {
   return folderName;
 }
 
+// turns n02099712-Labrador_retriever into Labrador Retriever
 export function stanfordLabelFromFolder(folderName: string): string {
   const dash = folderName.indexOf("-");
   if (dash === -1) return folderName.replace(/_/g, " ");
@@ -17,15 +23,17 @@ export function stanfordLabelFromFolder(folderName: string): string {
     .trim();
 }
 
+// example file name: n02099712-Labrador_retriever_0001.jpg
+// this extracts the 0001
+// important bc dataset images are ordered numerically
 export function extractStanfordImageNumber(filename: string): number {
   const match = filename.match(/_(\d+)\.jpe?g$/i);
   return match ? Number.parseInt(match[1], 10) : 0;
 }
 
-/**
- * Group sorted filenames into instances of `bucketSize` consecutive shots.
- * Stanford lists bursts of the same individual in numeric order.
- */
+// sorts filenames by image number
+// chunks into groups of 4
+// treats each group as one dog instance
 export function groupFilenamesIntoInstances(
   classFolder: string,
   filenames: string[],
@@ -46,6 +54,8 @@ export function groupFilenamesIntoInstances(
     const chunk = sorted.slice(i, i + bucketSize);
     const bucketNum = Math.floor(i / bucketSize);
     instances.push({
+      // ie: n02099712-Labrador_retriever/12
+      // later stored in pet_photos.stanford_instance_key
       instanceKey: `${classFolder}/${bucketNum}`,
       stanfordClass: classFolder,
       filenames: chunk,
@@ -55,6 +65,7 @@ export function groupFilenamesIntoInstances(
   return instances;
 }
 
+// given a filename it computes which bucket/instance it belongs to
 export function instanceKeyForFilename(
   classFolder: string,
   filename: string,
@@ -65,6 +76,8 @@ export function instanceKeyForFilename(
   return `${classFolder}/${bucket}`;
 }
 
+// path stored in the database
+// ie: /stanford-dogs/Images/n02099712-Labrador_retriever/n02099712-Labrador_retriever_0001.jpg
 export function publicImagePath(classFolder: string, filename: string): string {
   return `/stanford-dogs/Images/${classFolder}/${filename}`;
 }
