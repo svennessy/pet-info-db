@@ -15,6 +15,7 @@ const PAGE_SIZE = 24;
 const STATUS_LABELS: Record<PetReportStatus, string> = {
   lost: "Lost",
   found: "Found",
+  resolved: "Resolved",
 };
 
 function PetPhotoCard({ pet }: { pet: OtherPetPhotoRow }) {

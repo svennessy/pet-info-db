@@ -23,6 +23,7 @@ const SPECIES_LABELS: Record<PetSpeciesFilter, string> = {
 const STATUS_LABELS: Record<PetReportStatus, string> = {
   lost: "Lost",
   found: "Found",
+  resolved: "Resolved",
 };
 
 function breedDetail(pet: PetRow) {

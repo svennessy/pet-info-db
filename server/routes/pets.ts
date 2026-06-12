@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { asyncRoute } from "../utils/asyncRoute.js";
-import { createPetReport, getMapPets, getPets, deletePetReport } from "../services/pets.service.js";
+import { createPetReport, getMapPets, getPets, deletePetReport, updatePetReport } from "../services/pets.service.js";
 import { ok } from "../utils/apiResponse.js";
 import { getPetStats } from "../services/petStats.service.js";
 import { requireAuth } from "../middleware/requireAuth.js";
@@ -53,6 +53,14 @@ router.delete(
   requireAuth,
   asyncRoute(async (req, res) => {
     ok(res, await deletePetReport(req));
+  }),
+);
+
+router.patch(
+  "/:id",
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    ok(res, await updatePetReport(req));
   }),
 );
 

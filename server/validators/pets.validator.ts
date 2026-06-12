@@ -25,14 +25,14 @@ export const MapPetsQuerySchema = z.object({
   // protecting from someone saying limit=10000000000 and crashing performance
   limit: z.coerce.number().int().min(1).max(25000).default(25000),
   species: z.enum(["dog", "cat", "other"]).optional(),
-  reportStatus: z.enum(["lost", "found"]).optional(),
+  reportStatus: z.enum(["lost", "found", "resolved"]).optional(),
   search: z.string().trim().optional(),
 });
 
 // validates query params for GET /api/pets route 
 export const PetsListQuerySchema = z.object({
   species: z.enum(["dog", "cat", "other"]).optional(),
-  reportStatus: z.enum(["lost", "found"]).optional(),
+  reportStatus: z.enum(["lost", "found", "resolved"]).optional(),
   state: z.string().trim().optional(),
   breed: z.string().trim().optional(),
   search: z.string().trim().optional(),
@@ -50,7 +50,7 @@ export const PetsListQuerySchema = z.object({
 });
 
 export const CreatePetReportSchema = z.object({
-  reportStatus: z.enum(["lost", "found"]),
+  reportStatus: z.enum(["lost", "found", "resolved"]),
   species: z.enum(["dog", "cat", "other"]),
 
   name: z.string().trim().min(1).max(80),
@@ -59,4 +59,7 @@ export const CreatePetReportSchema = z.object({
 
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
+  photoUrls: z.array(z.string().url()).max(6).optional(),
 });
+
+export const UpdatePetReportSchema = CreatePetReportSchema.partial();

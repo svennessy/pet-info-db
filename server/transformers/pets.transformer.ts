@@ -5,7 +5,7 @@ type MapPetInput = {
   name: string;
   description: string | null;
   species: "dog" | "cat" | "other";
-  reportStatus: "lost" | "found";
+  reportStatus: "lost" | "found" | "resolved";
   breedLabel: string;
   latitude: number;
   longitude: number;

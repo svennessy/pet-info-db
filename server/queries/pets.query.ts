@@ -3,7 +3,7 @@ import type { Prisma } from "../../generated/prisma/client.js";
 // doesn't hit database, just builds prisma where object
 // service then passes this to prisma.pet.findMany
 // example frontend request:
-// /api/pets/map?minLat=35&maxLat=408&minLng=-80&maxLng=-70 
+// /api/pets/map?minLat=35&maxLat=408&minLng=-80&maxLng=-70
 // creates the following prisma where object:
 // {
 //   AND: [
@@ -42,8 +42,18 @@ export function buildMapPetsWhere(params: {
     andConditions.push({ species });
   }
 
-  if (reportStatus === "lost" || reportStatus === "found") {
+  if (
+    reportStatus === "lost" ||
+    reportStatus === "found" ||
+    reportStatus === "resolved"
+  ) {
     andConditions.push({ reportStatus });
+  } else {
+    andConditions.push({
+      reportStatus: {
+        not: "resolved",
+      },
+    });
   }
 
   if (search) {
@@ -70,9 +80,9 @@ export function buildMapPetsWhere(params: {
   };
 }
 
-// builds filters for GET /api/pets route 
+// builds filters for GET /api/pets route
 // starts with empty where object and adds conditions as we go
-// will return all if no filters are provided 
+// will return all if no filters are provided
 export function buildPetListWhere(params: {
   species?: string;
   reportStatus?: string;
@@ -80,13 +90,7 @@ export function buildPetListWhere(params: {
   breedSlug?: string;
   search?: string;
 }): Prisma.PetWhereInput {
-  const {
-    species,
-    reportStatus,
-    state,
-    breedSlug,
-    search,
-  } = params;
+  const { species, reportStatus, state, breedSlug, search } = params;
 
   let where: Prisma.PetWhereInput = {};
 
@@ -97,8 +101,16 @@ export function buildPetListWhere(params: {
     where.species = species;
   }
 
-  if (reportStatus === "lost" || reportStatus === "found") {
+  if (
+    reportStatus === "lost" ||
+    reportStatus === "found" ||
+    reportStatus === "resolved"
+  ) {
     where.reportStatus = reportStatus;
+  } else {
+    where.reportStatus = {
+      not: "resolved",
+    };
   }
 
   // relationship filtering
@@ -126,15 +138,12 @@ export function buildPetListWhere(params: {
     } else if (species === "cat") {
       where.catBreedSlug = breedSlug;
     } else {
-      where.OR = [
-        { dogBreedSlug: breedSlug },
-        { catBreedSlug: breedSlug },
-      ];
+      where.OR = [{ dogBreedSlug: breedSlug }, { catBreedSlug: breedSlug }];
     }
   }
 
   // instead of where.or = [...], we use AND: [where, ...]
-  // meaning species=cat, state=VA, search=Kevin 
+  // meaning species=cat, state=VA, search=Kevin
   // becomes: species is cat AND state is VA AND (name contains Kevin OR breed contains Kevin OR owner first name contains Kevin OR owner last name contains Kevin)
   if (search) {
     where = {
@@ -169,7 +178,7 @@ export function buildPetListWhere(params: {
   return where;
 }
 
-// builds sort order for GET /api/pets route 
+// builds sort order for GET /api/pets route
 // example: /api/pets?sort=owner&order=desc
 // creates the following prisma orderBy object:
 // { owner: { lastName: "desc" } }

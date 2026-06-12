@@ -141,7 +141,7 @@ export async function fetchCityStats(): Promise<CityStats> {
   return apiFetch<CityStats>("/api/cities/stats");
 }
 
-export type PetReportStatus = "lost" | "found";
+export type PetReportStatus = "lost" | "found" | "resolved";
 export type PetSpeciesFilter = "dog" | "cat" | "other";
 
 export type UserPetSummary = {

@@ -133,7 +133,7 @@ model PetPhoto {
   petId               Int
   imagePath           String
   sortOrder           Int
-  stanfordInstanceKey String
+  stanfordInstanceKey String?
   createdAt           DateTime @default(now())
   pet                 Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
 
@@ -196,6 +196,7 @@ enum PetSpecies {
 enum PetReportStatus {
   lost
   found
+  resolved
 }
 
 enum BreedCommonality {

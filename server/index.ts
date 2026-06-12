@@ -20,6 +20,7 @@ import petsRoutes from "./routes/pets.js";
 import statsRoutes from "./routes/stats.js";
 import usersRoutes from "./routes/users.js";
 import profilesRoutes from "./routes/profiles.js";
+import photosRoutes from "./routes/photos.js";
 // only used to check db connection
 import { prisma } from "../prisma/db.js";
 
@@ -78,6 +79,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api/pets", petsRoutes);
 app.use("/api", statsRoutes);
 app.use("/api", petPhotosRoutes);
+app.use("/api/photos", photosRoutes);
 app.use("/api/profiles", profilesRoutes);
 // in production express can serve the built react app
 // so render can host both API and frontend build from one service
