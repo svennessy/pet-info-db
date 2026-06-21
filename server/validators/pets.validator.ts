@@ -23,13 +23,18 @@ export const MapPetsQuerySchema = z.object({
   minLng: z.coerce.number().min(-180).max(180),
   maxLng: z.coerce.number().min(-180).max(180),
   // protecting from someone saying limit=10000000000 and crashing performance
-  limit: z.coerce.number().int().min(1).max(25000).default(25000),
+  limit: z.coerce.number().int().min(1).max(5000).default(5000),
+  page: z.coerce.number().int().min(1).default(1),
+
   species: z.enum(["dog", "cat", "other"]).optional(),
   reportStatus: z.enum(["lost", "found", "resolved"]).optional(),
   search: z.string().trim().optional(),
+
+  sort: z.enum(["createdAt", "name"]).default("createdAt"),
+  order: z.enum(["asc", "desc"]).default("desc"),
 });
 
-// validates query params for GET /api/pets route 
+// validates query params for GET /api/pets route
 export const PetsListQuerySchema = z.object({
   species: z.enum(["dog", "cat", "other"]).optional(),
   reportStatus: z.enum(["lost", "found", "resolved"]).optional(),
@@ -40,8 +45,16 @@ export const PetsListQuerySchema = z.object({
   // protects query builder
   // ie. if someone sends sort=DROP_TABLE_USERS Zod rejects it
   sort: z
-    .enum(["name", "species", "reportStatus", "breedLabel", "owner", "state"])
-    .default("name"),
+    .enum([
+      "name",
+      "species",
+      "reportStatus",
+      "breedLabel",
+      "owner",
+      "state",
+      "createdAt",
+    ])
+    .default("createdAt"),
 
   order: z.enum(["asc", "desc"]).default("desc"),
 

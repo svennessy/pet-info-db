@@ -30,13 +30,15 @@ model User {
 }
 
 model Profile {
-  id         String   @id
-  email      String   @unique
-  firstName  String?
-  lastName   String?
-  isVerified Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String         @id
+  email         String         @unique
+  firstName     String?
+  lastName      String?
+  isVerified    Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  favorites     FavoritePet[]
+  notifications Notification[]
 
   @@map("profiles")
 }
@@ -58,26 +60,29 @@ model Profile {
 //     }
 //   })
 model Pet {
-  id           Int             @id @default(autoincrement())
-  name         String
-  description  String?
-  species      PetSpecies
-  breedLabel   String
-  dogBreedSlug String?
-  catBreedSlug String?
-  otherKind    String?
-  ownerId      Int
-  latitude     Float
-  longitude    Float
+  id            Int             @id @default(autoincrement())
+  name          String
+  description   String?
+  species       PetSpecies
+  breedLabel    String
+  dogBreedSlug  String?
+  catBreedSlug  String?
+  otherKind     String?
+  ownerId       Int
+  latitude      Float
+  longitude     Float
   locationLabel String?
-  cityName String?
-  stateCode String?
-  reportStatus PetReportStatus @default(lost)
-  createdAt    DateTime        @default(now())
-  photos       PetPhoto[]
-  catBreed     CatBreed?       @relation(fields: [catBreedSlug], references: [slug])
-  dogBreed     DogBreed?       @relation(fields: [dogBreedSlug], references: [slug])
-  owner        User            @relation(fields: [ownerId], references: [id])
+  cityName      String?
+  stateCode     String?
+  notifications Notification[]
+  reportStatus  PetReportStatus @default(lost)
+  createdAt     DateTime        @default(now())
+  photos        PetPhoto[]
+  sightings     PetSighting[]
+  favorites     FavoritePet[]
+  catBreed      CatBreed?       @relation(fields: [catBreedSlug], references: [slug])
+  dogBreed      DogBreed?       @relation(fields: [dogBreedSlug], references: [slug])
+  owner         User            @relation(fields: [ownerId], references: [id])
 
   @@index([ownerId])
   @@index([species])
@@ -131,7 +136,7 @@ model DogBreed {
 model PetPhoto {
   id                  Int      @id @default(autoincrement())
   petId               Int
-  imagePath           String
+  imagePath           String   @unique
   sortOrder           Int
   stanfordInstanceKey String?
   createdAt           DateTime @default(now())
@@ -143,6 +148,26 @@ model PetPhoto {
   @@index([stanfordInstanceKey])
   @@index([createdAt])
   @@map("pet_photos")
+}
+
+model PetSighting {
+  id            Int            @id @default(autoincrement())
+  petId         Int
+  reporterEmail String?
+  latitude      Float
+  longitude     Float
+  locationLabel String?
+  notes         String?
+  photoUrl      String?
+  notifications Notification[]
+  createdAt     DateTime       @default(now())
+
+  pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@index([petId])
+  @@index([createdAt])
+  @@index([latitude, longitude])
+  @@map("pet_sightings")
 }
 
 // lookup/reference table
@@ -184,6 +209,44 @@ model City {
   @@index([population])
   @@index([name])
   @@map("cities")
+}
+
+model FavoritePet {
+  id        Int      @id @default(autoincrement())
+  profileId String
+  petId     Int
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  pet     Pet     @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, petId])
+  @@index([profileId])
+  @@index([petId])
+  @@index([createdAt])
+  @@map("favorite_pets")
+}
+
+model Notification {
+  id         Int              @id @default(autoincrement())
+  profileId  String
+  type       NotificationType
+  petId      Int?
+  sightingId Int?
+  message    String
+  readAt     DateTime?
+  createdAt  DateTime         @default(now())
+
+  profile  Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  pet      Pet?         @relation(fields: [petId], references: [id], onDelete: Cascade)
+  sighting PetSighting? @relation(fields: [sightingId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([profileId, readAt])
+  @@index([createdAt])
+  @@index([petId])
+  @@index([sightingId])
+  @@map("notifications")
 }
 
 // fixed allowed values
@@ -230,6 +293,11 @@ enum CatBreedGroup {
   hairless
   hybrid
   misc
+}
+
+enum NotificationType {
+  pet_sighting
+  pet_resolved
 }
 
 // eventually change from:

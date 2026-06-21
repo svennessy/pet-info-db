@@ -34,14 +34,28 @@ function resolveImagePath(imagePath: string) {
 // { resolvedUrl: "https://example.com/cat.jpg", imageUrl: "https://example.com/cat.jpg" }
 // so frontend can safely use photo.resolvedUrl ?? photo.imageUrl ?? photo.imagePath
 export function mapPetPhotosResolved<
-  T extends { photos?: Array<{ imagePath: string }> },
+  T extends {
+    id?: number | string;
+    photos?: Array<{
+      id?: number | string;
+      petId?: number | string;
+      imagePath: string;
+    }>;
+  },
 >(pet: T) {
   return {
     ...pet,
-    photos: pet.photos?.map((photo) => ({
-      ...photo,
-      resolvedUrl: resolveImagePath(photo.imagePath),
-      imageUrl: resolveImagePath(photo.imagePath),
-    })),
+    photos: pet.photos
+      ?.filter((photo) => {
+        if (pet.id === undefined || photo.petId === undefined) return true;
+        return String(photo.petId) === String(pet.id);
+      })
+      .map((photo) => ({
+        ...photo,
+        id: photo.id === undefined ? undefined : String(photo.id),
+        petId: photo.petId === undefined ? undefined : String(photo.petId),
+        resolvedUrl: resolveImagePath(photo.imagePath),
+        imageUrl: resolveImagePath(photo.imagePath),
+      })),
   };
 }

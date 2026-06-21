@@ -21,6 +21,9 @@ import statsRoutes from "./routes/stats.js";
 import usersRoutes from "./routes/users.js";
 import profilesRoutes from "./routes/profiles.js";
 import photosRoutes from "./routes/photos.js";
+import sightingsRoutes from "./routes/sightings.js";
+import favoritesRoutes from "./routes/favorites.js";
+import notificationsRoutes from "./routes/notifications.js";
 // only used to check db connection
 import { prisma } from "../prisma/db.js";
 
@@ -81,6 +84,9 @@ app.use("/api", statsRoutes);
 app.use("/api", petPhotosRoutes);
 app.use("/api/photos", photosRoutes);
 app.use("/api/profiles", profilesRoutes);
+app.use("/api", sightingsRoutes);
+app.use("/api/favorites", favoritesRoutes);
+app.use("/api", notificationsRoutes);
 // in production express can serve the built react app
 // so render can host both API and frontend build from one service
 if (isProduction) {

@@ -1,8 +1,6 @@
 import type { Request } from "express";
 import { prisma } from "../../../prisma/db.js";
 import { buildMapPetsWhere } from "../../queries/pets.query.js";
-import { mapPetPhotosResolved } from "../../resolveImageUrl.js";
-import { toMapPet } from "../../transformers/pets.transformer.js";
 import { HttpError } from "../../utils/httpError.js";
 import { formatZodIssues } from "../../utils/zodIssues.js";
 import { MapPetsQuerySchema } from "../../validators/pets.validator.js";
@@ -48,51 +46,16 @@ export async function getMapPets(req: Request) {
       reportStatus,
       search,
     }),
-    take: limit,
+    orderBy: {
+      id: "desc",
+    },
+    take: Math.min(limit, 5000),
     select: {
       id: true,
-      name: true,
-      description: true,
       species: true,
       reportStatus: true,
-      breedLabel: true,
       latitude: true,
       longitude: true,
-      cityName: true,
-      stateCode: true,
-      locationLabel: true,
-
-      owner: {
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-
-          city: {
-            select: {
-              name: true,
-              stateCode: true,
-              stateName: true,
-            },
-          },
-        },
-      },
-
-      photos: {
-        orderBy: {
-          sortOrder: "asc",
-        },
-        take: 4,
-        select: {
-          id: true,
-          petId: true,
-          imagePath: true,
-          sortOrder: true,
-          stanfordInstanceKey: true,
-          createdAt: true,
-        },
-      },
     },
   });
 
@@ -101,9 +64,12 @@ export async function getMapPets(req: Request) {
   // Frontend may want: reportType, breed
   return {
     pets: pets.map((pet) => ({
-      ...toMapPet(pet),
-      owner: pet.owner,
-      photos: mapPetPhotosResolved(pet).photos ?? [],
+      id: String(pet.id),
+      species: pet.species,
+      reportType: pet.reportStatus,
+      reportStatus: pet.reportStatus,
+      latitude: pet.latitude,
+      longitude: pet.longitude,
     })),
     total: pets.length,
   };

@@ -1,16 +1,20 @@
 import { Router } from "express";
 import { asyncRoute } from "../utils/asyncRoute.js";
-import { createPetReport, getMapPets, getPets, deletePetReport, updatePetReport } from "../services/pets.service.js";
+import {
+  createPetReport,
+  getPets,
+  deletePetReport,
+  updatePetReport,
+  getPetById,
+} from "../services/pets.service.js";
+import { getMapPets } from "../services/pets/getMapPets.service.js";
+import { getSidebarPets } from "../services/pets/getSidebarPets.service.js";
 import { ok } from "../utils/apiResponse.js";
 import { getPetStats } from "../services/petStats.service.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 
 const router = Router();
 
-// map pets
-// full url: /api/pets/map
-// flow: frontend map -> /api/pets/map -> getMapPets() -> ok(res, result)
-// for Zillow style map markers/clusters
 router.get(
   "/map",
   asyncRoute(async (req, res) => {
@@ -18,10 +22,20 @@ router.get(
   }),
 );
 
-// list pets
-// full url: /api/pets
-// flow: frontend list -> /api/pets -> getPets() -> ok(res, result)
-// for pet list/table view
+router.get(
+  "/sidebar",
+  asyncRoute(async (req, res) => {
+    ok(res, await getSidebarPets(req));
+  }),
+);
+
+router.get(
+  "/stats",
+  asyncRoute(async (_req, res) => {
+    ok(res, await getPetStats());
+  }),
+);
+
 router.get(
   "/",
   asyncRoute(async (req, res) => {
@@ -37,14 +51,10 @@ router.post(
   }),
 );
 
-// pet stats
-// full url: /api/pets/stats
-// flow: frontend stats -> /api/pets/stats -> getPetStats() -> ok(res, result)
-// for pet count/distribution stats
 router.get(
-  "/stats",
-  asyncRoute(async (_req, res) => {
-    ok(res, await getPetStats());
+  "/:id",
+  asyncRoute(async (req, res) => {
+    ok(res, await getPetById(req));
   }),
 );
 
@@ -82,11 +92,11 @@ export default router;
  * }
  */
 // if getPets() throws, it goes to global error handler in index.ts
-// ok standardizes response format: 
+// ok standardizes response format:
 // instead of:
 /**
  * {"pets": [...]}
- * 
+ *
  * it now returns:
  * {
  *   "status": "success",
@@ -94,6 +104,6 @@ export default router;
  *     "pets": [...],
  *   },
  * }
- * 
+ *
  * frontend apiFetch<T>() unwraps it
-*/
+ */

@@ -3,7 +3,7 @@
 type MapPetInput = {
   id: number | string;
   name: string;
-  description: string | null;
+  description?: string | null;
   species: "dog" | "cat" | "other";
   reportStatus: "lost" | "found" | "resolved";
   breedLabel: string;
@@ -12,6 +12,15 @@ type MapPetInput = {
   cityName: string | null;
   stateCode: string | null;
   locationLabel: string | null;
+  createdAt: Date;
+  photos?: Array<{
+    id: number | string;
+    petId: number | string;
+    imagePath: string;
+    sortOrder: number;
+    resolvedUrl?: string;
+    imageUrl?: string;
+  }>;
 };
 
 // reportType is for frontend display
@@ -36,6 +45,14 @@ export function toMapPet(pet: MapPetInput) {
     cityName: pet.cityName,
     stateCode: pet.stateCode,
     locationLabel: pet.locationLabel,
+    createdAt: pet.createdAt.toISOString(),
+    photos: (pet.photos ?? [])
+      .filter((photo) => String(photo.petId) === String(pet.id))
+      .map((photo) => ({
+        ...photo,
+        id: String(photo.id),
+        petId: String(photo.petId),
+      })),
   };
 }
 

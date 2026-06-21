@@ -4,4 +4,5 @@ export {
   createPetReport,
   deletePetReport,
   updatePetReport,
+  getPetById,
 } from "./pets/index.js";
