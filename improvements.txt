@@ -1,0 +1,84 @@
+scripts/download-pixabay-manifest-images.mjs
+  download during fetch:
+    instead of:
+      fetch metadata -> later download
+    change to:
+      fetch pixabay hit -> download immediately -> store local path directly -> write manifest already normalized
+  store immutable asset IDs 
+    instead of row.id, which is local only
+    better structure is:
+      {
+        "pixabayId": 1234567,
+        "localId": "...",
+        "imagePath": "...",
+      }
+  store supabase URL separately
+    instead of mutating imagePath
+    use this structure:
+      {
+        "localPath": "...",
+        "storagePath": "...",
+        "cdnUrl": "..."
+      }
+   
+pets.services.ts
+  prisma.pet.findMany calls prisma directly
+  technically fine but for stricter separation move to:
+    server/repositories/pets.repository.ts
+  sortField: string is broad but a typesafe version would define:
+    type PetSortField = 
+      "name"
+      "species"
+      "reportStatus"
+      "breedLabel"
+      "owner"
+      "state";
+    then: 
+    export function buildPetOrderBy(
+        sortField: PetSortField,
+        order: "asc" | "desc",
+    )
+
+pets.validators.ts
+  map schema allows minLat=40 maxLat=30
+  technically invalid because north is below south
+  Zod can enforce minLat < maxLat and minLang < maxLang using .refine()
+
+pets.transformer.ts
+  currently maintaining MapPetInput and PetListInput
+    could be infering types from Prisma:
+      Prisma.PetGetPayload<...>
+    removes duplication
+  transformers are currently thin
+    meaning DB field -> same field
+    could add things like:
+      photoCount
+      ownerFullName
+      distanceMiles
+      primaryPhotoUrl
+      isRecent
+
+prisma/schema.prisma:
+  User will eventually need:
+    supabaseAuthId String? @unique 
+  For real lost/found reporting eventually separate fields:
+    lostAt DateTime?
+    foundAt DateTime?
+    lastSeenDescription String?
+    description String?
+    color String?
+    sex String?
+    size String?
+
+server/index.ts:
+  once supabase storage is source of truth, local static serving is mostly for dev
+  prodution image resolution should happen in resolveImageUrl.ts 
+  where:
+    /candid-cats/images/cat.jpg
+  becomes:
+    https://supabase.../pet-assets/candid-cats/images/cat.jpg
+
+server/utils/cache.ts:
+  suppose render scales to 3 instances
+  caches are now split into multiple instead of one
+  larger scale would eventually use Redis or similar

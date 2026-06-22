@@ -1,0 +1,57 @@
+"***" = fixed
+
+
+.json:
+  issue with build typecheck. checks frontend but not server
+  eventually use "build": "npm run typecheck && vite build"
+  order is sus on "assets:fix:cats": "npm run dataset:cat:fetch -- --fresh && npm run photos:download:fresh-cats && npm run dataset:cat:process && npm run assets:upload:supabase && npm run dataset:cat:seed"
+    inspect scripts/download-pixabay-manifest-images.mjs to see if images actually get wired back into dataset
+  eventually cleanup scripts by grouping conceptually in comments/docs
+    Dev
+    DB
+    Dog dataset
+    Cat dataset
+    Other dataset
+    Assets
+    Audits
+
+server/queries/pets.query.ts
+  check on import for ../../generated/prisma/client.js make sure others all MapPetsQuerySchema
+  rare edge case with lat/lon international date line where west can be greater than east
+    shouldnt affect united states map 
+
+prisma/schema.prisma:
+  pet Pet? in user and ownerId Int @unique
+    means user can only own one pet
+    fine for mock data but eventually needs to be:
+      User {
+          pets Pet[]
+      }
+      Pet {
+          ownerId Int
+      }
+    and remove @unique from ownerId
+  rename stanfordInstanceKey in PetPhoto
+    it's dog specific but it's reused for cats/others
+    something like sourceInstanceKey string
+    will require migration and script updates
+
+***scripts/upload-pet-images-to-supabase.mjs:
+  const ROOT = join(fileURLToPath(import.meta.url), "../..");
+    sus bc fileURLToPath(import.meta.url) returns full file path:
+      .../scripts/upload-pet-images-to-supabase.mjs
+    meaning join(filePath, "../..") can behave weirdly bc it treats it as a folder
+    fix with similar:
+      import { dirname, join } from "node:path";
+
+      const SCRIPTS_DIR = dirname(fileURLtoPath(import.meta.url));
+      const ROOT = join(SCRIPTS_DIR, "..");
+
+src/data/datasets/cat.ts:
+  url: row.imagePath is too trusting
+  harden with similar:
+    if (row.imagePath.startsWith("http")) {
+      throw new Error(
+        "Manifest contains remote URLs. Expected local/Supabase paths."
+      )
+    }

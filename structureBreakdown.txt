@@ -1,0 +1,266 @@
+.json:
+React/Vite UI workspace
+Express/Prisma backend/data workspace
+Scripts:
+  frontend dev
+  backend dev
+  Prisma
+  database seeding
+  image datasets
+  Supabase upload
+  Render build
+Prisma:
+  fetch = collect/download metadata/assets
+  process = turn raw data into normalized dataset/index
+  seed = write DB rows
+
+
+
+scripts/download-pixabay-manifest-images.mjs
+  bridge between temporary pixabay URLs and stable local/Supabase asset paths
+  Pipeline:
+    dataset:cat:fetch
+      manifest.json contains temporary pixabay /get/ URLs
+    download-pixabay-manifest-images
+      downloads images immediately
+      rewrites manifest imagePath to local public path
+    dataset:cat:process
+      builds normalized dataset/index from rewritten manifest
+    dataset:cat:seed
+      writes stable paths into DB
+  Download source:
+    funcion downloadUrlForRow(row) {
+        if (row.imagePath?.startsWith("http")) return row.imagePath;
+        if (row.sourceUrl?.startsWith("http")) return row.sourceUrl;
+    }
+    Means that:
+      manifest row -> find temp pixabay url -> download it 
+  Local destination:
+    const dest = localPixabayImagePath(ROOT, prefix, row.id);
+      computes physical file path
+      ie. something like data/pixabay/cats/domestic-shorthair-00001.jpg
+  Public path rewrite:
+    const publicPath = publicPixabayImagePath(prefix, row.id);
+      computes the URL path the frontend/backend should use
+      ie. /candid-cats/images/domestic-shorthair-00001.jpg
+  Manifest rewrite:
+    row.imagePath = publicPath
+      after download image path becomes "imagePath": "/candid-cats/images/domestic-shorthair-00001.jpg"
+      instead of "imagePath": "https://pixabay.com/get/expired..."
+    rewritten manifest then flows through:
+      process -> dataset -> legacy index -> seed -> database
+
+
+
+Request architecture breakdown:
+  route -> validator -> service -> query -> transformer -> response
+  Route:
+    traffic cops 
+    ie. router.get("/", async (req, res) => {
+        const result = await getPets(req);
+
+        res.json(result);
+    })
+    receive HTTP request -> call service -> return response
+  Validators:
+    input security guards
+    ie. server/validators/pets.validator.ts 
+    makes sure incoming data is valid 
+    example req:
+      /api/pets?page=abc
+      without validation Number("abc") becomes NaN, which can break queries
+    with Zod:
+      const PetsListQuerySchema = z.object({
+        page: z.coerce.number().int().positive().defaiult(1),
+      });
+      now ?page=abc fails immediately
+    they return trusted data:
+      before: req.query -> type is unknown
+      after: validated.page -> type is known as number 
+  Services:
+    business logic
+    ie. server/services/pets.service.ts
+    services answer what should happen
+    example:
+      export async function getPets(filters) {
+        ...
+      }
+    responsibilities:
+      use validator output
+      call queries
+      apply business rules
+      call transformers
+      return result
+    example:
+      only show active pets
+      apply pagination
+      filter by species
+  Queries:
+    database specialists
+    ie. server/queries/pets.query.ts
+    purpose is to talk to prisma and the database
+    example:
+      export async function findPets(where, skip, take) {
+        return prisma.pet.findMany({
+            where, 
+            skip,
+            take,
+        });
+      }
+    they should know:
+      tables, relations, indexes, prisma
+    they should not know:
+      HTTP, validation, UI formatting
+    think:
+      service says "get dogs near roanoke",
+      query says "here's the SQL"
+  Transformers 
+    translators
+    ie. server/transformers/pets.transformer.ts 
+    purpose is to convert DB shape into API shape
+    Database:
+      {
+        "id": 1, 
+        "owner": {
+            "firstName": "Kevin"
+        }
+      }
+    Frontend wants:
+      {
+        "id": 1,
+        "ownerName": "Kevin"
+      }
+    Transformer function:
+      export function toPetDto(pet) {
+        return {
+            id: pet.id,
+            ownerName: pet.owner.firstName,
+        };
+      }
+    frontend should not depend on raw database structure 
+  Utilites:
+    shared tools
+    purpose is to be reusable helpers
+    examples:
+      parsePagination()
+      buildBoundingBox()
+      distanceBetweenPoints()
+    
+Full relationship diagram:
+  GET /api/pets?species=dogs
+  Flow:
+    Route
+      receives request
+    Validator
+      validates request
+    Service
+      decides how search works 
+    Query 
+      asks prisma for pets
+    Prisma
+      asks supabase postgres
+    Query
+      returns rows
+    Transformer 
+      formats response 
+    Service 
+    Route
+    Browser
+
+
+
+server/queries/pets.query.ts:
+  explains how filters become database conditions
+  relationship is:
+    pets.service.ts
+      cals buildPetListWhere()
+    pets.query.ts
+      returns prisma filter object
+    pets.service.ts
+      gives that object to prisma
+
+
+
+server/transformers/pets.transformer.ts:
+  "why not just return prisma results directly?"
+  because frontend should never care how db is structured
+  creates a flow of:
+    Database
+    Transformer
+    Frontend Contract
+
+
+
+prisma/schema.prisma:
+  data blueprint for entire backend
+  flow:
+    schema.prisma
+    generated Prisma client
+    services/query code 
+    API responses 
+    frontend UI
+
+
+
+server/index.ts:
+  full flow:
+    npm run dev:server
+    tsx watch server/index.ts
+    this file returns
+    express app is created
+    middleware is mounted
+    routes are mounted
+    server starts listening on port 3002
+
+
+
+server/utils/zodIssues.ts:
+  full flow:
+    browser request
+    route
+    asyncRoute
+    validator (zod)
+    service
+    query builder 
+    prisma
+    transformer
+    ok()
+    response
+  error side:
+    browser request
+    validator fails
+    formatZodIssues()
+    HttpError
+    asyncRoute.catch(next)
+    global error handler
+    JSON error response
+
+
+
+server/utils/cache.ts:
+  imagine GET /api/cat-pet-photos/stats runs COUNT(*) GROUP BY aggregate queries every time 
+  now imagine 10 users refresh every 5 seconds
+  db keeps doing expensive work
+  full flow instead:
+    first request
+    compute request
+    store result
+    next request
+    return stored result
+    after TTL expires
+    recompute
+
+
+
+src/data/petGenerator.ts:
+  flow:
+    cities
+    usersgeneratePets()
+    pet records
+    photo seeding Scripts
+    petPhoto records
+    prisma
+    API
+    transformers
+    frontend
+  import separation: this file only handles pets, photos are separate
