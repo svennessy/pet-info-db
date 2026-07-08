@@ -52,6 +52,7 @@ export async function getMapPets(req: Request) {
     take: Math.min(limit, 5000),
     select: {
       id: true,
+      name: true,
       species: true,
       reportStatus: true,
       latitude: true,
@@ -65,6 +66,7 @@ export async function getMapPets(req: Request) {
   return {
     pets: pets.map((pet) => ({
       id: String(pet.id),
+      name: pet.name,
       species: pet.species,
       reportType: pet.reportStatus,
       reportStatus: pet.reportStatus,
