@@ -23,7 +23,8 @@ export const MapPetsQuerySchema = z.object({
   minLng: z.coerce.number().min(-180).max(180),
   maxLng: z.coerce.number().min(-180).max(180),
   // protecting from someone saying limit=10000000000 and crashing performance
-  limit: z.coerce.number().int().min(1).max(5000).default(5000),
+  limit: z.coerce.number().int().min(1).max(8000).default(8000),
+  zoom: z.coerce.number().min(0).max(22).optional(),
   page: z.coerce.number().int().min(1).default(1),
 
   species: z.enum(["dog", "cat", "other"]).optional(),

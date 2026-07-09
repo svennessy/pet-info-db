@@ -116,6 +116,8 @@ export async function seedOtherPetPhotos() {
     where: {
       species: "other",
       otherKind: { in: [...OTHER_PET_PHOTO_KIND_LABELS] },
+      // Keep real user-posted pets (auth owners use phone "profile-<id>").
+      owner: { NOT: { phone: { startsWith: "profile-" } } },
     },
     select: { id: true, otherKind: true },
     orderBy: { id: "asc" },
@@ -131,6 +133,7 @@ export async function seedOtherPetPhotos() {
       pet: {
         species: "other",
         otherKind: { in: [...OTHER_PET_PHOTO_KIND_LABELS] },
+        owner: { NOT: { phone: { startsWith: "profile-" } } },
       },
     },
   });

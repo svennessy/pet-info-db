@@ -121,15 +121,56 @@ function normalizeToken(value: string) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-// instead of NYC and a tiny Nebraska town having equal probability 
-// city.pop is divided by totalPop to get a probability
-// so NYC, LA, Chicago, etc receive far more users
+/**
+ * NYC boroughs/neighborhoods are often listed as separate "cities" with their
+ * own census populations. Counting them on top of New York City double-counts
+ * the metro and starves the rest of the Northeast in population-weighted seeds.
+ */
+const NYC_METRO_CHILD_IDS = new Set([
+  "brooklyn-ny",
+  "queens-ny",
+  "manhattan-ny",
+  "the-bronx-ny",
+  "staten-island-ny",
+  "jamaica-ny",
+  "astoria-ny",
+  "east-new-york-ny",
+  "east-flatbush-ny",
+  "washington-heights-ny",
+  "borough-park-ny",
+  "sunset-park-ny",
+  "sheepshead-bay-ny",
+  "harlem-ny",
+  "flushing-ny",
+  "bensonhurst-ny",
+  "bushwick-ny",
+  "parkchester-ny",
+  "brighton-beach-ny",
+  "far-rockaway-ny",
+  "williamsburg-ny",
+]);
+
+function effectiveCityWeight(city: CityForAssignment) {
+  if (NYC_METRO_CHILD_IDS.has(city.id)) return 0;
+  // Square-root dampening keeps large metros ahead without letting them
+  // absorb most of a national seed.
+  return Math.sqrt(Math.max(city.population, 1));
+}
+
+// instead of NYC and a tiny Nebraska town having equal probability
+// city weight is divided by totalWeight to get a probability
+// so NYC, LA, Chicago, etc receive more users — but not all of them
 function buildCityPicker(cities: CityForAssignment[], rng: () => number) {
-  const totalPop = cities.reduce((sum, c) => sum + c.population, 0);
+  const weights = cities.map(effectiveCityWeight);
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  if (totalWeight <= 0) {
+    throw new Error("No cities with positive population weight");
+  }
+
   const cumulative: number[] = [];
   let acc = 0;
-  for (const city of cities) {
-    acc += city.population / totalPop;
+  for (const weight of weights) {
+    acc += weight / totalWeight;
     cumulative.push(acc);
   }
 
@@ -138,7 +179,7 @@ function buildCityPicker(cities: CityForAssignment[], rng: () => number) {
     let lo = 0;
     let hi = cumulative.length - 1;
     // binary seach optimization
-    // instead of check every city 
+    // instead of check every city
     // search narrowed to middle city and then left or right
     while (lo < hi) {
       const mid = Math.floor((lo + hi) / 2);

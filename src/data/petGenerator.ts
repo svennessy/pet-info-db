@@ -14,6 +14,7 @@ import { createRng, pickWeighted } from "./userGenerator";
 
 export type OwnerCityCoords = {
   ownerId: number;
+  cityId: string;
   latitude: number;
   longitude: number;
 };
@@ -131,7 +132,13 @@ function coordsForOwner(
   if (!city) {
     throw new Error(`Missing city coords for owner ${ownerId}`);
   }
-  return petLatLongFromCity(city.latitude, city.longitude, ownerId, seed);
+  return petLatLongFromCity(
+    city.latitude,
+    city.longitude,
+    ownerId,
+    seed,
+    city.cityId,
+  );
 }
 
 export function generatePets(

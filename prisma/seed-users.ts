@@ -17,8 +17,15 @@ async function main() {
   console.log(`Generating ${USER_COUNT} users across ${cities.length} cities…`);
   const generated = generateUsers(USER_COUNT, cities, SEED);
 
-  console.log("Clearing existing users…");
-  await prisma.user.deleteMany();
+  console.log("Clearing existing seeded users (keeping auth posting users)…");
+  // Keep users created for real profiles (phone "profile-<id>") and their pets.
+  await prisma.user.deleteMany({
+    where: {
+      NOT: {
+        phone: { startsWith: "profile-" },
+      },
+    },
+  });
 
   console.log("Inserting users…");
   for (let i = 0; i < generated.length; i += BATCH) {

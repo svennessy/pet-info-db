@@ -56,6 +56,7 @@ async function main() {
   const ownerRows = await prisma.user.findMany({
     select: {
       id: true,
+      cityId: true,
       city: { select: { latitude: true, longitude: true } },
     },
     orderBy: { id: "asc" },
@@ -63,10 +64,11 @@ async function main() {
   });
 
   const ownerIds = ownerRows.map((u) => u.id);
-  // ie: [{ ownerId: 1, latitude: 40.7128, longitude: -74.0060 }
+  // ie: [{ ownerId: 1, cityId: "new-york-city-ny", latitude: 40.7128, longitude: -74.0060 }
   // generator uses this to create pet coordinates near owner's city
   const ownerCoords = ownerRows.map((u) => ({
     ownerId: u.id,
+    cityId: u.cityId,
     latitude: u.city.latitude,
     longitude: u.city.longitude,
   }));
@@ -84,9 +86,17 @@ async function main() {
   // actual logic lives in src/data/petGenerator.ts
   const generated = generatePets(ownerIds, ownerCoords, dogBreeds, catBreeds, SEED);
 
-  console.log("Clearing existing pets…");
-  // deletes all existing pets
-  await prisma.pet.deleteMany();
+  console.log("Clearing existing seeded pets (keeping user-posted)…");
+  // Keep real user-posted pets (owners created via auth have phone "profile-<id>").
+  await prisma.pet.deleteMany({
+    where: {
+      owner: {
+        NOT: {
+          phone: { startsWith: "profile-" },
+        },
+      },
+    },
+  });
 
   console.log("Inserting pets…");
   // divides reseed into smaller batches for faster insertion

@@ -6214,7 +6214,7 @@
     "name": "Brooklyn",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 2300664,
+    "population": 0,
     "latitude": 40.6501,
     "longitude": -73.94958,
     "rankInState": 2
@@ -6224,7 +6224,7 @@
     "name": "Queens",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 2272771,
+    "population": 0,
     "latitude": 40.68149,
     "longitude": -73.83652,
     "rankInState": 3
@@ -6234,7 +6234,7 @@
     "name": "Manhattan",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 1487536,
+    "population": 0,
     "latitude": 40.78343,
     "longitude": -73.96625,
     "rankInState": 4
@@ -6244,7 +6244,7 @@
     "name": "The Bronx",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 1385108,
+    "population": 0,
     "latitude": 40.84985,
     "longitude": -73.86641,
     "rankInState": 5
@@ -6254,7 +6254,7 @@
     "name": "Staten Island",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 468730,
+    "population": 0,
     "latitude": 40.56233,
     "longitude": -74.13986,
     "rankInState": 6
@@ -6274,7 +6274,7 @@
     "name": "Jamaica",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 216866,
+    "population": 0,
     "latitude": 40.69149,
     "longitude": -73.80569,
     "rankInState": 8
@@ -6304,7 +6304,7 @@
     "name": "East Flatbush",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 178464,
+    "population": 0,
     "latitude": 40.65371,
     "longitude": -73.93042,
     "rankInState": 11
@@ -6314,7 +6314,7 @@
     "name": "East New York",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 173198,
+    "population": 0,
     "latitude": 40.66677,
     "longitude": -73.88236,
     "rankInState": 12
@@ -6324,7 +6324,7 @@
     "name": "Washington Heights",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 152613,
+    "population": 0,
     "latitude": 40.8501,
     "longitude": -73.93541,
     "rankInState": 13
@@ -6334,7 +6334,7 @@
     "name": "Astoria",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 150165,
+    "population": 0,
     "latitude": 40.77205,
     "longitude": -73.93014,
     "rankInState": 14
@@ -6344,7 +6344,7 @@
     "name": "Borough Park",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 149248,
+    "population": 0,
     "latitude": 40.63399,
     "longitude": -73.99681,
     "rankInState": 15
@@ -6364,7 +6364,7 @@
     "name": "Sunset Park",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 126000,
+    "population": 0,
     "latitude": 40.64548,
     "longitude": -74.01241,
     "rankInState": 17
@@ -6374,7 +6374,7 @@
     "name": "Sheepshead Bay",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 122534,
+    "population": 0,
     "latitude": 40.59122,
     "longitude": -73.94458,
     "rankInState": 18
@@ -6394,7 +6394,7 @@
     "name": "Harlem",
     "stateCode": "NY",
     "stateName": "New York",
-    "population": 116345,
+    "population": 0,
     "latitude": 40.80788,
     "longitude": -73.94542,
     "rankInState": 20

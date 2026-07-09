@@ -74,12 +74,42 @@ function slugify(name, stateCode) {
     .replace(/^-|-$/g, "")}-${stateCode.toLowerCase()}`;
 }
 
+/** Boroughs/neighborhoods that double-count New York City population. */
+const NYC_METRO_CHILD_NAMES = new Set([
+  "brooklyn",
+  "queens",
+  "manhattan",
+  "the bronx",
+  "bronx",
+  "staten island",
+  "jamaica",
+  "astoria",
+  "east new york",
+  "east flatbush",
+  "washington heights",
+  "borough park",
+  "sunset park",
+  "sheepshead bay",
+  "harlem",
+  "flushing",
+  "bensonhurst",
+  "bushwick",
+  "parkchester",
+  "brighton beach",
+  "far rockaway",
+  "williamsburg",
+]);
+
 const usPlaces = allCities.filter(
   (c) =>
     c.country === "US" &&
     STATE_CODES.has(c.adminCode) &&
     c.population > 0 &&
-    c.loc?.coordinates?.length === 2,
+    c.loc?.coordinates?.length === 2 &&
+    !(
+      c.adminCode === "NY" &&
+      NYC_METRO_CHILD_NAMES.has(c.name.toLowerCase())
+    ),
 );
 
 const byState = new Map();

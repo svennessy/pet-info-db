@@ -141,7 +141,12 @@ export async function seedCatPetPhotos() {
 
   // get all cat pets from db with breed slug
   const pets = await prisma.pet.findMany({
-    where: { species: "cat", catBreedSlug: { not: null } },
+    where: {
+      species: "cat",
+      catBreedSlug: { not: null },
+      // Keep real user-posted pets (auth owners use phone "profile-<id>").
+      owner: { NOT: { phone: { startsWith: "profile-" } } },
+    },
     select: { id: true, catBreedSlug: true },
     orderBy: { id: "asc" },
   });
@@ -151,10 +156,14 @@ export async function seedCatPetPhotos() {
   }
 
   console.log(`Assigning candid cat photos to ${pets.length} cats…`);
-  // delete all existing cat photos
-  // generates fresh on reseed
+  // delete seeded cat photos only (keep user-posted)
   await prisma.petPhoto.deleteMany({
-    where: { pet: { species: "cat" } },
+    where: {
+      pet: {
+        species: "cat",
+        owner: { NOT: { phone: { startsWith: "profile-" } } },
+      },
+    },
   });
 
   const rng = createRng(SEED);

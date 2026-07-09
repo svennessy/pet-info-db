@@ -1,7 +1,7 @@
 import { petLatLongFromCity } from "../src/data/petLocation.js";
 import { prisma } from "./db.js";
 
-const BATCH = 500;
+const BATCH = 1000;
 const SEED = 43;
 
 async function main() {
@@ -10,6 +10,7 @@ async function main() {
       id: true,
       owner: {
         select: {
+          cityId: true,
           city: { select: { latitude: true, longitude: true } },
         },
       },
@@ -17,25 +18,43 @@ async function main() {
     orderBy: { id: "asc" },
   });
 
-  console.log(`Jittering lat/long for ${pets.length} pets…`);
+  console.log(`Jittering lat/long (land-safe) for ${pets.length} pets…`);
 
   for (let i = 0; i < pets.length; i += BATCH) {
     const batch = pets.slice(i, i + BATCH);
-    await prisma.$transaction(
-      batch.map((pet) => {
-        const { latitude, longitude } = petLatLongFromCity(
-          pet.owner.city.latitude,
-          pet.owner.city.longitude,
-          pet.id,
-          SEED,
-        );
-        return prisma.$executeRaw`
-          UPDATE pets
-          SET latitude = ${latitude}, longitude = ${longitude}
-          WHERE id = ${pet.id}
-        `;
-      }),
-    );
+    const ids: number[] = [];
+    const lats: number[] = [];
+    const lngs: number[] = [];
+
+    for (const pet of batch) {
+      const { latitude, longitude } = petLatLongFromCity(
+        pet.owner.city.latitude,
+        pet.owner.city.longitude,
+        pet.id,
+        SEED,
+        pet.owner.cityId,
+      );
+      ids.push(pet.id);
+      lats.push(latitude);
+      lngs.push(longitude);
+    }
+
+    await prisma.$executeRaw`
+      UPDATE pets AS p
+      SET
+        latitude = v.latitude,
+        longitude = v.longitude
+      FROM (
+        SELECT *
+        FROM unnest(
+          ${ids}::int[],
+          ${lats}::float8[],
+          ${lngs}::float8[]
+        ) AS t(id, latitude, longitude)
+      ) AS v
+      WHERE p.id = v.id
+    `;
+
     console.log(`  ${Math.min(i + BATCH, pets.length)} / ${pets.length}`);
   }
 

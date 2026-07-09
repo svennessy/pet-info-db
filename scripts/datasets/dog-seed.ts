@@ -173,7 +173,12 @@ export async function seedDogPetPhotos() {
     }));
 
   const pets = await prisma.pet.findMany({
-    where: { species: "dog", dogBreedSlug: { not: null } },
+    where: {
+      species: "dog",
+      dogBreedSlug: { not: null },
+      // Keep real user-posted pets (auth owners use phone "profile-<id>").
+      owner: { NOT: { phone: { startsWith: "profile-" } } },
+    },
     select: { id: true, dogBreedSlug: true },
     orderBy: { id: "asc" },
   });
@@ -190,7 +195,12 @@ export async function seedDogPetPhotos() {
     `Assigning photos to ${pets.length} dogs (${muttPetCount} mixed-breed / *-mix → Wikimedia mutts)…`,
   );
   await prisma.petPhoto.deleteMany({
-    where: { pet: { species: "dog" } },
+    where: {
+      pet: {
+        species: "dog",
+        owner: { NOT: { phone: { startsWith: "profile-" } } },
+      },
+    },
   });
 
   const rng = createRng(SEED);
