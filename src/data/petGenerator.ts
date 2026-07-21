@@ -15,6 +15,8 @@ import { createRng, pickWeighted } from "./userGenerator";
 export type OwnerCityCoords = {
   ownerId: number;
   cityId: string;
+  cityName: string;
+  stateCode: string;
   latitude: number;
   longitude: number;
 };
@@ -56,6 +58,9 @@ export type GeneratedPet = {
   ownerId: number;
   latitude: number;
   longitude: number;
+  cityName: string;
+  stateCode: string;
+  locationLabel: string;
 };
 
 const DOG_COUNT = 12_000;
@@ -123,22 +128,35 @@ function breedBySlug(
 
 // how pets end up near owner's city
 // flow is: owner city coords -> petLatLongFromCity() -> small random offset -> pet location
-function coordsForOwner(
+function locationForOwner(
   ownerCoords: Map<number, OwnerCityCoords>,
   ownerId: number,
   seed: number,
-): { latitude: number; longitude: number } {
+): {
+  latitude: number;
+  longitude: number;
+  cityName: string;
+  stateCode: string;
+  locationLabel: string;
+} {
   const city = ownerCoords.get(ownerId);
   if (!city) {
     throw new Error(`Missing city coords for owner ${ownerId}`);
   }
-  return petLatLongFromCity(
+  const { latitude, longitude } = petLatLongFromCity(
     city.latitude,
     city.longitude,
     ownerId,
     seed,
     city.cityId,
   );
+  return {
+    latitude,
+    longitude,
+    cityName: city.cityName,
+    stateCode: city.stateCode,
+    locationLabel: `${city.cityName}, ${city.stateCode}`,
+  };
 }
 
 export function generatePets(
@@ -200,11 +218,13 @@ export function generatePets(
       reportStatus,
     );
     const ownerId = owners[i];
-    const { latitude, longitude } = coordsForOwner(
-      ownerCoordsById,
-      ownerId,
-      seed,
-    );
+    const {
+      latitude,
+      longitude,
+      cityName,
+      stateCode,
+      locationLabel,
+    } = locationForOwner(ownerCoordsById, ownerId, seed);
 
     // if dog, pick a dog breed (weighted random)
     if (species === "dog") {
@@ -226,6 +246,9 @@ export function generatePets(
         ownerId,
         latitude,
         longitude,
+        cityName,
+        stateCode,
+        locationLabel,
       });
     } else if (species === "cat") {
       // pick a cat breed (pre-built shuffled queue)
@@ -249,6 +272,9 @@ export function generatePets(
         ownerId,
         latitude,
         longitude,
+        cityName,
+        stateCode,
+        locationLabel,
       });
     } else {
       const kind = pickWeighted(
@@ -272,6 +298,9 @@ export function generatePets(
         ownerId,
         latitude,
         longitude,
+        cityName,
+        stateCode,
+        locationLabel,
       });
     }
   }
@@ -291,4 +320,7 @@ export function generatePets(
 //   ownerId: 1,
 //   latitude: 40.7128,
 //   longitude: -74.0060,
+//   cityName: "New York City",
+//   stateCode: "NY",
+//   locationLabel: "New York City, NY",
 // }

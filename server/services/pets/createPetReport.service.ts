@@ -33,8 +33,11 @@ export async function createPetReport(req: AuthedRequest) {
     nearestCity,
   });
 
+  // Prefer reverse-geocoded place (actual city at the pin) over nearest seeded city.
+  const cityName = location.cityName ?? nearestCity.name;
+  const stateCode = location.stateCode ?? nearestCity.stateCode;
   const locationLabel =
-    location.cityName && location.stateCode
+    location.cityName != null
       ? location.locationLabel
       : `${nearestCity.name}, ${nearestCity.stateCode}`;
 
@@ -46,8 +49,8 @@ export async function createPetReport(req: AuthedRequest) {
     breedLabel: data.breedLabel,
     latitude: data.latitude,
     longitude: data.longitude,
-    cityName: location.cityName ?? nearestCity.name,
-    stateCode: location.stateCode ?? nearestCity.stateCode,
+    cityName,
+    stateCode,
     locationLabel,
     otherKind: data.species === "other" ? data.breedLabel : null,
     owner: {

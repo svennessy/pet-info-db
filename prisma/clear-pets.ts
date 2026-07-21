@@ -1,15 +1,13 @@
 import { prisma } from "./db.js";
+import { seededPetDeleteWhere } from "./seededPetDeleteWhere.js";
 
-// Keep real user-posted pets (owners created via auth have phone "profile-<id>").
+// Keep user-posted pets and any seeded pets with sightings or favorites
+// (those cascade-delete and would empty Bulletin / Saved).
 const result = await prisma.pet.deleteMany({
-  where: {
-    owner: {
-      NOT: {
-        phone: { startsWith: "profile-" },
-      },
-    },
-  },
+  where: seededPetDeleteWhere,
 });
-console.log(`Cleared ${result.count} seeded pets (user-posted pets kept).`);
+console.log(
+  `Cleared ${result.count} seeded pets (user-posted + interacted pets kept).`,
+);
 
 await prisma.$disconnect();

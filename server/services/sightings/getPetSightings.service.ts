@@ -37,9 +37,15 @@ export async function getPetSightings(req: Request) {
 
   return {
     sightings: sightings.map((sighting) => ({
-      ...sighting,
       id: String(sighting.id),
       petId: String(sighting.petId),
+      latitude: sighting.latitude,
+      longitude: sighting.longitude,
+      locationLabel: sighting.locationLabel,
+      notes: sighting.notes,
+      photoUrl: sighting.photoUrl,
+      verificationStatus: sighting.verificationStatus,
+      verifiedAt: sighting.verifiedAt?.toISOString() ?? null,
       createdAt: sighting.createdAt.toISOString(),
     })),
   };

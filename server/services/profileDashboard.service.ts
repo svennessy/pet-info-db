@@ -28,7 +28,15 @@ export async function getProfileDashboard(req: AuthedRequest) {
         },
       }),
 
-      prisma.petSighting.count(),
+      prisma.petSighting.count({
+        where: {
+          pet: {
+            owner: {
+              email: profile.email,
+            },
+          },
+        },
+      }),
 
       prisma.pet.findMany({
         where: {

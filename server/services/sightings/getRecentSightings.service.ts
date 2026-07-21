@@ -49,6 +49,8 @@ export async function getRecentSightings(req: Request) {
       locationLabel: sighting.locationLabel,
       notes: sighting.notes,
       photoUrl: sighting.photoUrl,
+      verificationStatus: sighting.verificationStatus,
+      verifiedAt: sighting.verifiedAt?.toISOString() ?? null,
       createdAt: sighting.createdAt.toISOString(),
       pet: {
         ...toMapPet(sighting.pet),

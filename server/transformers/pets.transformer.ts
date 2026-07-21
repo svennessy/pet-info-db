@@ -30,6 +30,12 @@ type MapPetInput = {
 // but db doesn't have them so they're blank to keep API stable
 // map marker payload is smaller to keep map faster
 export function toMapPet(pet: MapPetInput) {
+  const locationLabel =
+    pet.locationLabel ??
+    (pet.cityName && pet.stateCode
+      ? `${pet.cityName}, ${pet.stateCode}`
+      : pet.cityName);
+
   return {
     id: String(pet.id),
     name: pet.name,
@@ -44,7 +50,7 @@ export function toMapPet(pet: MapPetInput) {
     longitude: pet.longitude,
     cityName: pet.cityName,
     stateCode: pet.stateCode,
-    locationLabel: pet.locationLabel,
+    locationLabel,
     createdAt: pet.createdAt.toISOString(),
     photos: (pet.photos ?? [])
       .filter((photo) => String(photo.petId) === String(pet.id))

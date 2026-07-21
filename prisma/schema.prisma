@@ -151,22 +151,25 @@ model PetPhoto {
 }
 
 model PetSighting {
-  id            Int            @id @default(autoincrement())
-  petId         Int
-  reporterEmail String?
-  latitude      Float
-  longitude     Float
-  locationLabel String?
-  notes         String?
-  photoUrl      String?
-  notifications Notification[]
-  createdAt     DateTime       @default(now())
+  id                 Int                         @id @default(autoincrement())
+  petId              Int
+  reporterEmail      String?
+  latitude           Float
+  longitude          Float
+  locationLabel      String?
+  notes              String?
+  photoUrl           String?
+  verificationStatus SightingVerificationStatus  @default(unverified)
+  verifiedAt         DateTime?
+  notifications      Notification[]
+  createdAt          DateTime                    @default(now())
 
   pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
 
   @@index([petId])
   @@index([createdAt])
   @@index([latitude, longitude])
+  @@index([verificationStatus])
   @@map("pet_sightings")
 }
 
@@ -298,6 +301,11 @@ enum CatBreedGroup {
 enum NotificationType {
   pet_sighting
   pet_resolved
+}
+
+enum SightingVerificationStatus {
+  unverified
+  verified
 }
 
 // eventually change from:
